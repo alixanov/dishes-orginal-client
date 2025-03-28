@@ -1,0 +1,29 @@
+/* Ombor.css */
+.ant-table {
+  overflow: auto;
+  min-width: 100%;
+}
+
+.ant-space {
+  display: flex;
+  gap: 12px;
+}
+
+.ant-input {
+  height: 32px;
+}
+
+/* Стили для кнопок и модальных окон */
+.ant-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ant-modal-content {
+  padding: 24px;
+}
+
+.ant-form-vertical .ant-form-item {
+  margin-bottom: 16px;
+}

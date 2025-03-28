@@ -1,0 +1,160 @@
+/* General Modal Styles */
+.modal {
+  display: none;
+  /* Hidden by default */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  /* Black background with opacity */
+  backdrop-filter: blur(2px);
+  z-index: -1;
+  /* Hide behind other elements by default */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.active {
+  z-index: 99;
+  /* Show the modal on top */
+}
+
+.modal-content {
+  max-width: 540px;
+  width: 100%;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: #32325d40 0px 50px 100px -20px, #0000004d 0px 30px 60px -30px;
+  transform: translateY(-20%);
+}
+
+.modal-header {
+  width: 100%;
+  height: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0 20px;
+}
+
+.modal-header > h1 {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.modal-header > button {
+  display: flex;
+  font-size: 24px;
+  color: #333;
+  background: transparent;
+  border: none;
+}
+
+.modal-header > button:active {
+  transform: scale(0.9);
+}
+
+.modal-body {
+  width: 100%;
+  padding: 20px;
+  text-align: start;
+  /* Center content inside the modal body */
+}
+
+/* Barcode SVG Styles */
+
+/* Form Styles */
+.modal .form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modal .form > label {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.modal .form > label > span {
+  font-size: 14px;
+  font-weight: 400;
+  padding-left: 5px;
+  color: #333;
+}
+
+.modal .form > label > input {
+  width: 100%;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.modal .radio-group {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 15px;
+}
+
+.modal .radio-group > span {
+  inline-size: 100%;
+  font-size: 14px;
+  font-weight: 400;
+  color: #333;
+}
+
+.modal .radio-group > label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  padding: 5px 10px;
+  height: 40px;
+}
+
+.modal .radio-group > label > input {
+  width: 15px;
+  height: 15px;
+}
+
+.modal .radio-group > label > span {
+  font-size: 14px;
+  font-weight: 400;
+  color: #33333383;
+}
+
+.modal .radio-group > label > input:checked + span {
+  color: #333;
+}
+
+.modal .btn-group {
+  width: 100%;
+  display: flex;
+  gap: 15px;
+}
+
+.modal .btn-group > button {
+  width: calc((100% - 15px) / 2);
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+  background: #333;
+  border: none;
+  border-radius: 5px;
+}

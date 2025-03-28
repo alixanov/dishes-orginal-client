@@ -1,0 +1,136 @@
+.invest-container {
+     padding: 30px;
+     background-color: #f5f7fa;
+     min-height: 100vh;
+}
+
+.invest-warehouse-cards {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+     gap: 25px;
+}
+
+.invest-warehouse-card {
+     transition: transform 0.3s ease, box-shadow 0.3s ease;
+     border-radius: 12px;
+     overflow: hidden;
+}
+
+.invest-warehouse-card:hover {
+     transform: translateY(-8px);
+     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.invest-summary-card {
+     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+     color: white;
+     border: none;
+     border-radius: 12px;
+     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+     transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.invest-summary-card:hover {
+     transform: translateY(-8px);
+     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Стили для заголовков карточек */
+.invest-warehouse-card .ant-card-head {
+     border-bottom: none;
+}
+
+.invest-warehouse-card .ant-card-head-title {
+     font-size: 20px;
+     font-weight: 700;
+     color: #333;
+}
+
+.invest-summary-card .ant-card-head {
+     border-bottom: none;
+}
+
+.invest-summary-card .ant-card-head-title {
+     font-size: 20px;
+     font-weight: 700;
+     color: white;
+}
+
+.invest-warehouse-address {
+     font-size: 14px;
+     color: #666;
+     margin-bottom: 15px;
+     margin-top: -10px;
+     display: flex;
+     align-items: center;
+     gap: 8px;
+}
+
+.invest-warehouse-stats {
+     padding: 0 10px;
+}
+
+.invest-stat-item {
+     margin-bottom: 10px;
+}
+
+.invest-stat-item p {
+     margin: 4px 0;
+     font-size: 15px;
+     color: #333;
+     display: flex;
+     align-items: center;
+     gap: 8px;
+}
+
+.invest-stat-item strong {
+     color: #444;
+     font-weight: 600;
+     display: flex;
+     align-items: center;
+     gap: 8px;
+}
+
+.invest-summary-card .invest-stat-item p,
+.invest-summary-card .invest-stat-item strong {
+     color: #ffffff;
+}
+
+.invest-purchase {
+     color: #333;
+     font-weight: 600;
+}
+
+.invest-profit {
+     color: #2ecc71;
+     font-weight: 600;
+}
+
+.invest-quantity {
+     color: #3498db;
+     font-weight: 600;
+}
+
+.invest-debt {
+     color: #f1c40f;
+     font-weight: 600;
+}
+
+.invest-date {
+     color: coral;
+     font-weight: 600;
+}
+
+.invest-no-data {
+     text-align: center;
+     color: #888;
+     font-style: italic;
+     margin: 20px 0;
+}
+
+.invest-loading {
+     text-align: center;
+     font-size: 18px;
+     color: #888;
+     padding: 50px;
+}

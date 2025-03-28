@@ -1,0 +1,57 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table > thead {
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+}
+
+.table > thead > tr > :where(th, td) {
+  border: 1px solid #ccc;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.table > thead > tr > :first-child {
+  text-align: center;
+  width: 60px;
+}
+
+.table > tbody > tr > :where(th, td) {
+  max-width: 200px;
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  font-size: 14px;
+  color: #666;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.table > tbody > tr > :where(th, td) figure {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.table > tbody > tr > :where(th, td) figure img {
+  width: 80px;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+}
+
+.table > tbody > tr > :first-child {
+  text-align: center;
+}
+
+.table > tbody > tr:hover {
+  background: #f9f9f9;
+  cursor: pointer;
+}
