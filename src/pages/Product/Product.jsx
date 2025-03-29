@@ -46,8 +46,8 @@ const BarcodePrint = React.forwardRef(({ barcode }, ref) => (
 const Product = () => {
   const [form] = Form.useForm();
   const [modalVisible, setModalVisible] = useState(false);
-  const [imageModalVisible, setImageModalVisible] = useState(false); // Для модала с увеличенным изображением
-  const [selectedImage, setSelectedImage] = useState(""); // Для хранения URL выбранного изображения
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
   const [editingProduct, setEditingProduct] = useState("");
   const [editingSource, setEditingSource] = useState("");
   const { data: products = [], isLoading: productsLoading } = useGetProductsQuery();
@@ -64,7 +64,6 @@ const Product = () => {
   const [searchName, setSearchName] = useState("");
   const [searchBarcode, setSearchBarcode] = useState("");
 
-  // Объединяем продукты из Product и Partner с обработкой отсутствующих полей
   const allProducts = [
     ...products.map((product) => ({
       ...product,
@@ -247,23 +246,27 @@ const Product = () => {
       dataIndex: "total_kg",
       key: "total_kg",
       render: (text) => text?.toFixed(2),
+      align: "center", // Выравнивание чисел по центру
     },
     {
       title: "Dona soni",
       dataIndex: "quantity",
       key: "quantity",
+      align: "center",
     },
     {
       title: "Karobka soni",
       dataIndex: "box_quantity",
       key: "box_quantity",
       render: (text) => text?.toFixed(2),
+      align: "center",
     },
     {
       title: "Pachka soni",
       key: "package_quantity",
       render: (_, record) =>
         record?.isPackage ? record?.package_quantity?.toFixed(2) : "-",
+      align: "center",
     },
     {
       title: "Valyuta",
@@ -275,12 +278,14 @@ const Product = () => {
       dataIndex: "purchasePrice",
       key: "purchasePrice",
       render: (text, record) => `${record.purchasePrice?.value || "-"}`,
+      align: "center",
     },
     {
       title: "Sotish narxi",
       dataIndex: "sellingPrice",
       key: "sellingPrice",
       render: (text, record) => `${record.sellingPrice?.value || "-"}`,
+      align: "center",
     },
     {
       title: "Ombor",
@@ -338,10 +343,10 @@ const Product = () => {
           </Button>
         </div>
       ),
+      align: "center",
     },
   ];
 
-  // Улучшенная фильтрация с обработкой undefined/null
   const filteredProducts = allProducts.filter((product) => {
     const name = (product.name || "").toLowerCase();
     const barcode = (product.barcode || "").toLowerCase();
@@ -410,6 +415,7 @@ const Product = () => {
       </div>
 
       <Table
+        className="product-table" // Уникальный класс для таблицы
         columns={columns}
         dataSource={filteredProducts}
         loading={productsLoading || partnerProductsLoading}
@@ -417,7 +423,6 @@ const Product = () => {
         rowKey="_id"
       />
 
-      {/* Модал для добавления/редактирования продукта */}
       <Modal
         title={editingProduct ? "Tovar tahrirlash" : "Tovar qo'shish"}
         visible={modalVisible}
@@ -576,7 +581,6 @@ const Product = () => {
         </Form>
       </Modal>
 
-      {/* Модал для отображения увеличенного изображения */}
       <Modal
         title="Tovar rasmi"
         visible={imageModalVisible}

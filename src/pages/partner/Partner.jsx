@@ -118,7 +118,7 @@ const Partner = () => {
      return (
           <div style={{ padding: '24px', background: '#f0f2f5' }}>
                <Title level={2} style={{ color: '#001529', marginBottom: '24px' }}>
-                    Hamkorlar va mahsulotlar
+                    Kontragent va mahsulotlar
                </Title>
                <Row gutter={[16, 16]}>
                     {unikalHamkorlar.map((hamkor, indeks) => (

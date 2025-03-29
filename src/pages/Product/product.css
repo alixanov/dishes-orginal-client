@@ -34,15 +34,68 @@
      line-height: 1.5;
 }
 
-/* Стили для таблицы */
-.ant-table {
+/* Стили для таблицы (применяются только к таблице с классом product-table) */
+.product-table {
      overflow: auto;
      min-width: 100%;
+     background: #fff;
 }
 
+/* Устанавливаем границы для всей таблицы */
+.product-table .ant-table-container {
+     border: 1px solid #d9d9d9 !important;
+     /* Внешняя граница таблицы */
+     border-collapse: collapse !important;
+}
+
+/* Заголовки таблицы */
+.product-table .ant-table-thead>tr>th {
+     background: #f5f5f5 !important;
+     /* Серый фон для заголовков */
+     color: #333;
+     font-weight: 600;
+     border: 1px solid #d9d9d9 !important;
+     /* Границы для заголовков */
+     padding: 12px 16px !important;
+     text-align: left;
+}
+
+/* Стили для ячеек таблицы */
+.product-table .ant-table-tbody>tr>td {
+     border: 1px solid #d9d9d9 !important;
+     /* Границы для всех ячеек */
+     padding: 12px 16px !important;
+     /* Увеличенные отступы для читаемости */
+     color: #555;
+     background: #fff !important;
+     /* Белый фон для всех строк */
+}
+
+/* Эффект при наведении на строку */
+.product-table .ant-table-tbody>tr:hover>td {
+     background: #f0f5ff !important;
+     /* Лёгкий голубой фон при наведении */
+}
+
+/* Выравнивание текста в ячейках */
+.product-table .ant-table-tbody>tr>td,
+.product-table .ant-table-thead>tr>th {
+     text-align: left !important;
+     /* Текст по умолчанию выравнивается по левому краю */
+}
+
+/* Выравнивание чисел по центру (где указано align: "center" в columns) */
+.product-table .ant-table-tbody>tr>td.ant-table-column-align-center,
+.product-table .ant-table-thead>tr>th.ant-table-column-align-center {
+     text-align: center !important;
+}
+
+/* Стили для кнопок в колонке "Amallar" */
 .table_actions {
      display: flex;
      gap: 8px;
+     flex-direction: column;
+     align-items: center;
 }
 
 /* Стили для изображения в таблице */
@@ -103,7 +156,6 @@
      object-fit: contain;
      border-radius: 8px;
      border: 1px solid #e5e7eb;
-  
 }
 
 .no-image-placeholder {

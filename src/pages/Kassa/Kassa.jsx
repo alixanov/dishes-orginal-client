@@ -38,6 +38,7 @@ const Kassa = () => {
   const [categories, setCategories] = useState([]);
   const [form] = Form.useForm();
   const [categoryForm] = Form.useForm();
+  const [sellForm] = Form.useForm(); // Форма для модального окна продажи
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [xarajatModal, setXarajatModal] = useState(false);
   const navigate = useNavigate();
@@ -49,9 +50,6 @@ const Kassa = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [paymentDiscount, setPaymentDiscount] = useState("");
-  const [clientName, setClientName] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
-  const [clientAddress, setClientAddress] = useState("");
   const [dueDate, setDueDate] = useState(null);
   const [currency, setCurrency] = useState("SUM");
   const [selectedUnit, setSelectedUnit] = useState("quantity");
@@ -80,22 +78,27 @@ const Kassa = () => {
   }, [expenses]);
 
   useEffect(() => {
-    const result = allProducts.filter((product) => {
-      const name = (product.name || "").toLowerCase();
-      const code = (product.code || "").toLowerCase();
-      const barcode = (product.barcode || "").toLowerCase();
-      const searchLower = searchText.toLowerCase();
-      const codeSearchLower = codeSearchText.toLowerCase();
+    let result = [];
 
-      const matchesSearchText = name.includes(searchLower) || barcode.includes(searchLower);
-      const matchesCodeSearch = code.includes(codeSearchLower);
+    const codeSearchLower = codeSearchText.toLowerCase();
+    const searchLower = searchText.toLowerCase();
 
-      if (searchText && codeSearchText) {
-        return matchesSearchText && matchesCodeSearch;
-      }
-      return matchesSearchText || matchesCodeSearch;
-    });
-    setFilteredProducts((searchText || codeSearchText) ? result : []);
+    if (codeSearchLower) {
+      // Если поле поиска по коду заполнено, фильтруем только по первым трём символам кода
+      result = allProducts.filter((product) => {
+        const code = (product.code || "").toLowerCase();
+        return code.startsWith(codeSearchLower);
+      });
+    } else if (searchLower) {
+      // Если поле поиска по коду пустое, фильтруем по имени или штрих-коду
+      result = allProducts.filter((product) => {
+        const name = (product.name || "").toLowerCase();
+        const barcode = (product.barcode || "").toLowerCase();
+        return name.includes(searchLower) || barcode.includes(searchLower);
+      });
+    }
+
+    setFilteredProducts(result);
   }, [allProducts, searchText, codeSearchText]);
 
   const handleCancel = () => {
@@ -162,6 +165,15 @@ const Kassa = () => {
       { totalUSD: 0, totalSUM: 0 }
     );
 
+    // Получаем данные клиента из формы
+    const clientData = sellForm.getFieldsValue();
+    const clientName = selectedClient
+      ? clients.find((c) => c._id === selectedClient)?.name
+      : clientData.clientName || "Noma'lum";
+    const clientAddress = selectedClient
+      ? clients.find((c) => c._id === selectedClient)?.address
+      : clientData.clientAddress || "Noma'lum";
+
     const tableRows = basket
       .map((item, index) => {
         const promo = promos.find((p) => p._id === paymentDiscount);
@@ -181,12 +193,12 @@ const Kassa = () => {
           : totalPrice;
 
         return `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${item.name}</td>
-          <td>${item.size || "-"}</td>
-          <td>${item.code || "-"}</td>
-          <td>${selectedUnit === "quantity"
+        <tr style="text-align: center;">
+          <td style="padding: 8px;">${index + 1}</td>
+          <td style="padding: 8px;">${item.name}</td>
+          <td style="padding: 8px;">${item.size || "-"}</td>
+          <td style="padding: 8px;">${item.code || "-"}</td>
+          <td style="padding: 8px;">${selectedUnit === "quantity"
             ? item.quantity
             : selectedUnit === "package_quantity"
               ? item.quantity * item.quantity_per_package
@@ -194,71 +206,75 @@ const Kassa = () => {
                 ? item.quantity * item.quantity_per_package * item.package_quantity_per_box
                 : null
           }</td>
-          <td>${formatNumber(item.sellingPrice.value)}</td>
-          <td>${item.currency === "USD" ? "Доллар" : "Сум"}</td>
-          <td>${promo ? `${promo.percent} ${promo.type === "percent" ? "%" : "сум"}` : "—"}</td>
-          <td>${formatNumber(discountedPrice)}</td>
+          <td style="padding: 8px;">${formatNumber(item.sellingPrice.value)}</td>
+          <td style="padding: 8px;">${item.currency === "USD" ? "Доллар" : "Сум"}</td>
+          <td style="padding: 8px;">${promo ? `${promo.percent} ${promo.type === "percent" ? "%" : "сум"}` : "—"}</td>
+          <td style="padding: 8px;">${formatNumber(discountedPrice)}</td>
         </tr>
       `;
       })
       .join("");
 
     const content = `
-      <div style="width:210mm; height:297mm; display:flex; flex-direction:column; gap:6px; padding:12px; font-family:sans-serif">
-        <div style="display:flex; justify-content:space-between; width:100%;">
-          <b>${moment().format("DD.MM.YYYY, HH:mm:ss")} даги Хисобварак-фактура</b>
-          <span>Хисобварак-фактура</span>
-        </div>
-        <div style="display:flex; width:100%;">
-          <div style="display:flex; flex-direction:column; gap:6px; width:50%;">
-            <div style="display:flex; flex-direction:column; width:100%; justify-content:space-between;">
-              <b>Етказиб берувчи:</b>
-              <p>"BANKERSUZ GROUP" MCHJ</p>
+      <div style="width: 210mm; height: 297mm; padding: 20px; font-family: Arial, sans-serif; background-color: #f9f9f9; box-sizing: border-box;">
+        <div style="border: 2px solid #1a73e8; border-radius: 12px; padding: 20px; background-color: #ffffff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 20px;">
+            <h2 style="margin: 0; font-size: 18px; color: #1a73e8;">${moment().format("DD.MM.YYYY, HH:mm:ss")} даги Хисобварак-фактура</h2>
+            <span style="font-size: 16px; color: #555;">Хисобварак-фактура</span>
+          </div>
+          <div style="display: flex; width: 100%; margin-bottom: 20px;">
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 50%;">
+              <div style="display: flex; flex-direction: column;">
+                <b style="color: #333;">Етказиб берувчи:</b>
+                <p style="margin: 5px 0; color: #555;">"BANKERSUZ GROUP" MCHJ</p>
+              </div>
+              <div style="display: flex; flex-direction: column;">
+                <b style="color: #333;">Манзил:</b>
+                <p style="margin: 5px 0; color: #555;">ГОРОД ТАШКEНТ УЛИЦА НАВОИЙ 16-А</p>
+              </div>
             </div>
-            <div style="display:flex; flex-direction:column; width:100%; justify-content:space-between">
-              <b>Манзил:</b>
-              <p>ГОРОД ТАШКEНТ УЛИЦА НАВОИЙ 16-А</p>
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 50%;">
+              <div style="display: flex; flex-direction: column;">
+                <b style="color: #333;">Сотиб олувчи:</b>
+                <p style="margin: 5px 0; color: #555;">${clientName}</p>
+              </div>
+              <div style="display: flex; flex-direction: column;">
+                <b style="color: #333;">Манзил:</b>
+                <p style="margin: 5px 0; color: #555;">${clientAddress}</p>
+              </div>
             </div>
           </div>
-          <div>
-            <div style="display:flex; flex-direction:column; width:100%; justify-content:space-between">
-              <b>Сотиб олувчи:</b>
-              <p>${clientName || "Noma'lum"}</p>
-            </div>
-            <div style="display:flex; flex-direction:column; width:100%; justify-content:space-between">
-              <b>Манзил:</b>
-              <p>${clientAddress || "Noma'lum"}</p>
-            </div>
+          <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px; border: 1px solid #e0e0e0;">
+            <thead>
+              <tr style="background-color: #f1f3f4; text-align: center;">
+                <th style="padding: 10px; border: 1px solid #e0e0e0;">No</th>
+                <th style="padding: 10px; border: 1px solid #e0e0e0;">Махсулот номи</th>
+                <th style="padding: 10px; border: 1px solid #e0e0e0;">Улчам</th>
+                <th style="padding: 10px; border: 1px solid #e0e0e0;">Код</th>
+                <th style="padding: 10px; border: 1px solid #e0e0e0;">Миқдор</th>
+                <th style="padding: 10px; border: 1px solid #e0e0e0;">Нарх</th>
+                <th style="padding: 10px; border: 1px solid #e0e0e0;">Валюта</th>
+                <th style="padding: 10px; border: 1px solid #e0e0e0;">Чегирма</th>
+                <th style="padding: 10px; border: 1px solid #e0e0e0;">Умумий сумма</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+          <div style="margin-bottom: 20px;">
+            <b style="color: #333;">Жами тўловнинг доллар билан тўланадиган қисми: ${formatNumber(totalUSD)} доллар</b><br/>
+            <b style="color: #333;">Жами тўловнинг сyм билан тўланадиган қисми: ${formatNumber(totalSUM)} сyм</b>
           </div>
-        </div>
-        <table border="1" style="border-collapse: collapse; width: 100%;">
-          <thead>
-            <tr>
-              <td>No</td>
-              <td>Махсулот номи</td>
-              <td>Улчам</td>
-              <td>Код</td>
-              <td>Миқдор</td>
-              <td>Нарх</td>
-              <td>Валюта</td>
-              <td>Чегирма</td>
-              <td>Умумий сумма</td>
-            </tr>
-          </thead>
-          <tbody>
-            ${tableRows}
-          </tbody>
-        </table>
-        <b>Жами тўловнинг доллар билан тўланадиган қисми: ${formatNumber(totalUSD)} доллар</b>
-        <b>Жами тўловнинг сyм билан тўланадиган қисми: ${formatNumber(totalSUM)} сyм</b>
-        <div style="display: flex; justify-content: space-around; margin-top: 20px;">
-          <div style="text-align: center;">
-            <img src="${yodgor_abdullaev}" style="width: 100px; height: 100px; border-radius: 10px; background: white; padding: 10px;" />
-            <p style="margin: 5px 0; font-size: 12px; color: #000;">@YODGOR_ABDULLAE</p>
-          </div>
-          <div style="text-align: center;">
-            <img src="${zolotayaroza77}" style="width: 100px; height: 100px; border-radius: 10px; background: white; padding: 10px;" />
-            <p style="margin: 5px 0; font-size: 12px; color: #000;">@ZOLOTAYAROZA77</p>
+          <div style="display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #e0e0e0; padding-top: 20px;">
+            <div style="text-align: center;">
+              <img src="${yodgor_abdullaev}" style="width: 100px; height: 100px; border-radius: 10px; background: white; padding: 10px;" />
+              <p style="margin: 5px 0; font-size: 12px; color: #000;">@YODGOR_ABDULLAEV</p>
+            </div>
+            <div style="text-align: center;">
+              <img src="${zolotayaroza77}" style="width: 100px; height: 100px; border-radius: 10px; background: white; padding: 10px;" />
+              <p style="margin: 5px 0; font-size: 12px; color: #000;">@ZOLOTAYAROZA77</p>
+            </div>
           </div>
         </div>
       </div>
@@ -576,23 +592,24 @@ const Kassa = () => {
   ];
 
   const handleSell = async () => {
-    generatePDF();
-    if (
-      !paymentMethod ||
-      (!selectedClient && (!clientName || !clientPhone || !clientAddress)) ||
-      (paymentMethod === "credit" && !dueDate)
-    ) {
-      message.error("Barcha maydonlarni to'ldirishingiz kerak!");
-      return;
-    }
     try {
+      // Проверяем, заполнены ли обязательные поля
+      await sellForm.validateFields();
+
+      const formValues = sellForm.getFieldsValue();
+
+      if (!paymentMethod || (paymentMethod === "credit" && !dueDate)) {
+        message.error("Barcha maydonlarni to'ldirishingiz kerak!");
+        return;
+      }
+
       let clientId = selectedClient;
 
       if (!selectedClient) {
         const clientResponse = await createClient({
-          name: clientName,
-          phone: clientPhone,
-          address: clientAddress,
+          name: formValues.clientName,
+          phone: formValues.clientPhone,
+          address: formValues.clientAddress,
         }).unwrap();
         clientId = clientResponse._id;
       }
@@ -690,14 +707,16 @@ const Kassa = () => {
         );
       }
 
+      // Генерируем PDF после успешной продажи
+      generatePDF();
+
+      // Сбрасываем состояние и форму
       setIsModalVisible(false);
       setBasket([]);
       setPaymentMethod("");
       setSelectedClient("");
-      setClientName("");
-      setClientPhone("");
-      setClientAddress("");
       setDueDate(null);
+      sellForm.resetFields();
       message.success("Sotuv amalga oshirildi");
     } catch (error) {
       message.error("Xatolik yuz berdi");
@@ -708,21 +727,29 @@ const Kassa = () => {
   return (
     <div className="page" style={{ marginTop: "8px", paddingInline: "4px" }}>
       <div className="products">
-        <div className="products_header" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        <div className="products_header" style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
           <Input
             autoFocus
             type="search"
             placeholder="Tovarni nomi yoki shtrix kodi orqali topish"
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            onChange={(e) => {
+              setSearchText(e.target.value);
+              if (codeSearchText) setCodeSearchText(""); // Очищаем поле поиска по коду, если начинаем поиск по имени/штрих-коду
+            }}
             style={{ flex: 1, minWidth: "200px" }}
+            disabled={codeSearchText.length > 0} // Отключаем поле, если поиск по коду активен
           />
           <Input
             type="search"
-            placeholder="Kod orqali qidirish"
+            placeholder="Kod orqali qidirish (birinchi 3 ta belgi)"
             value={codeSearchText}
-            onChange={(e) => setCodeSearchText(e.target.value)}
+            onChange={(e) => {
+              setCodeSearchText(e.target.value);
+              if (searchText) setSearchText(""); // Очищаем поле поиска по имени/штрих-коду, если начинаем поиск по коду
+            }}
             style={{ flex: 1, minWidth: "200px" }}
+            disabled={searchText.length > 0} // Отключаем поле, если поиск по имени/штрих-коду активен
           />
           <Select value={currency} onChange={(value) => setCurrency(value)} style={{ width: "100px" }}>
             <Option value="SUM">SUM</Option>
@@ -886,19 +913,24 @@ const Kassa = () => {
         title="To'lov va mijoz ma'lumotlarini kiritish"
         open={isModalVisible}
         onOk={handleSell}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={() => {
+          setIsModalVisible(false);
+          sellForm.resetFields();
+        }}
       >
-        <Form style={{ display: "flex", flexDirection: "column", gap: "0px" }}>
-          <p style={{ margin: "0" }}>To'lov usuli</p>
-          <Form.Item rules={[{ required: true, message: "To'lov usulini tanlang" }]}>
+        <Form
+          form={sellForm}
+          layout="vertical"
+          style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+        >
+          <Form.Item label="To'lov usuli" name="paymentMethod" rules={[{ required: true, message: "To'lov usulini tanlang" }]}>
             <Select value={paymentMethod} onChange={(value) => setPaymentMethod(value)}>
               <Select.Option value="cash">Naqd</Select.Option>
               <Select.Option value="card">Plastik karta</Select.Option>
               <Select.Option value="credit">Qarz</Select.Option>
             </Select>
           </Form.Item>
-          <p style={{ margin: "0" }}>Promokod</p>
-          <Form.Item>
+          <Form.Item label="Promokod" name="paymentDiscount">
             <Select value={paymentDiscount} onChange={(value) => setPaymentDiscount(value)}>
               <Select.Option value={0}>Promokodsiz</Select.Option>
               {promos.map((item) => (
@@ -908,17 +940,26 @@ const Kassa = () => {
               ))}
             </Select>
           </Form.Item>
-          <p style={{ margin: "0" }}>Haridor</p>
-          <Form.Item>
+          <Form.Item label="Haridor" name="selectedClient">
             <Select
               showSearch
               value={selectedClient}
               onChange={(value) => {
                 setSelectedClient(value);
                 const client = clients.find((c) => c._id === value);
-                setClientAddress(client?.address || "");
-                setClientPhone(client?.phone || "");
-                setClientName(client?.name || "");
+                if (client) {
+                  sellForm.setFieldsValue({
+                    clientName: client.name,
+                    clientPhone: client.phone,
+                    clientAddress: client.address,
+                  });
+                } else {
+                  sellForm.setFieldsValue({
+                    clientName: "",
+                    clientPhone: "",
+                    clientAddress: "",
+                  });
+                }
               }}
               placeholder="Haridorni tanlang"
               optionFilterProp="children"
@@ -936,42 +977,37 @@ const Kassa = () => {
           </Form.Item>
           {selectedClient === "" && (
             <>
-              <p style={{ margin: "0" }}>Mijoz ismi</p>
-              <Form.Item rules={[{ required: true, message: "Mijoz ismini kiriting" }]}>
-                <Input
-                  type="text"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  placeholder="Mijoz ismi"
-                />
+              <Form.Item
+                label="Mijoz ismi"
+                name="clientName"
+                rules={[{ required: true, message: "Mijoz ismini kiriting" }]}
+              >
+                <Input placeholder="Mijoz ismi" />
               </Form.Item>
-              <p style={{ margin: "0" }}>Telefon raqami</p>
-              <Form.Item rules={[{ required: true, message: "Telefon raqamini kiriting" }]}>
-                <Input
-                  type="text"
-                  value={clientPhone}
-                  onChange={(e) => setClientPhone(e.target.value)}
-                  placeholder="Telefon raqami"
-                />
+              <Form.Item
+                label="Telefon raqami"
+                name="clientPhone"
+                rules={[{ required: true, message: "Telefon raqamini kiriting" }]}
+              >
+                <Input placeholder="Telefon raqami" />
               </Form.Item>
-              <p style={{ margin: "0" }}>Manzili</p>
-              <Form.Item rules={[{ required: true, message: "Manzili kiriting" }]}>
-                <Input
-                  type="text"
-                  value={clientAddress}
-                  onChange={(e) => setClientAddress(e.target.value)}
-                  placeholder="Manzili"
-                />
+              <Form.Item
+                label="Manzili"
+                name="clientAddress"
+                rules={[{ required: true, message: "Manzili kiriting" }]}
+              >
+                <Input placeholder="Manzili" />
               </Form.Item>
             </>
           )}
           {paymentMethod === "credit" && (
-            <>
-              <p style={{ margin: "0" }}>Qarz muddati</p>
-              <Form.Item rules={[{ required: true, message: "Qarz muddatini kiriting" }]}>
-                <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-              </Form.Item>
-            </>
+            <Form.Item
+              label="Qarz muddati"
+              name="dueDate"
+              rules={[{ required: true, message: "Qarz muddatini kiriting" }]}
+            >
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            </Form.Item>
           )}
         </Form>
       </Modal>

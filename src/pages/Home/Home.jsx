@@ -13,7 +13,9 @@ import {
   BarChartOutlined,
   ExclamationCircleOutlined,
   MoneyCollectOutlined, // Rasxodlar uchun yangi ikona
-  ScheduleOutlined
+  ScheduleOutlined,
+  UserSwitchOutlined,
+  UserAddOutlined
 } from "@ant-design/icons";
 import Admin from "../Adminlar/Adminlar";
 import Ombor from "../Ombor/Ombor";
@@ -33,6 +35,7 @@ import Statistika from "../statistika/statistika";
 import Investitsiya from "../investment/Investitsiya";
 import Partner from "../partner/Partner";
 import ReconciliationAct from "../reconciliation-act/ReconciliationAct"
+import ReportAdd from "../report-add/ReportAdd";
 
 const { Header, Sider, Content } = Layout;
 
@@ -73,6 +76,8 @@ export default function Home() {
 
       case "report":
         return <ReconciliationAct />;
+      case "report-add":
+        return <ReportAdd />;
       
       case "home":
     
@@ -104,15 +109,17 @@ export default function Home() {
           <Menu.Item key="ombor" icon={<AppstoreOutlined />}>
             Omborlar
           </Menu.Item>
-          <Menu.Item key="product" icon={<ShoppingOutlined />}>
-            Mahsulotlar
-          </Menu.Item>
-          <Menu.Item key="partner" icon={<ShoppingOutlined />}>
-            Xamkorlar
-          </Menu.Item>
+      
           <Menu.Item key="kassa" icon={<DollarOutlined />}>
             Kassa
           </Menu.Item>
+          <Menu.Item key="product" icon={<ShoppingOutlined />}>
+            Mahsulotlar
+          </Menu.Item>
+          <Menu.Item key="partner" icon={<UserSwitchOutlined />}>
+            Kontragent
+          </Menu.Item>
+        
           <Menu.Item key="client" icon={<TeamOutlined />}>
             Xaridorlar
           </Menu.Item>
@@ -136,7 +143,10 @@ export default function Home() {
           </Menu.Item>
 
           <Menu.Item key="report" icon={< ScheduleOutlined  />}>
-            Shartnoma
+            Act sverka
+          </Menu.Item>
+          <Menu.Item key="report-add" icon={<UserAddOutlined />}>
+            Act +
           </Menu.Item>
 
         </Menu>

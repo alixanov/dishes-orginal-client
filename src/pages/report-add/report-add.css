@@ -1,0 +1,34 @@
+.report-container {
+     padding: 24px;
+     background: #f0f2f5;
+}
+
+.report-header {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 24px;
+     flex-wrap: wrap;
+     gap: 16px;
+}
+
+.ant-table {
+     background: #fff;
+     border-radius: 8px;
+     overflow: hidden;
+}
+
+.ant-table-container {
+     border: 1px solid #f0f0f0;
+}
+
+.ant-modal-body {
+     padding: 24px;
+}
+
+@media (max-width: 768px) {
+     .report-header {
+          flex-direction: column;
+          align-items: flex-start;
+     }
+}
