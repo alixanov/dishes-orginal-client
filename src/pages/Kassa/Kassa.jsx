@@ -53,6 +53,7 @@ const Kassa = () => {
   const [dueDate, setDueDate] = useState(null);
   const [currency, setCurrency] = useState("SUM");
   const [selectedUnit, setSelectedUnit] = useState("quantity");
+  const userLogin = localStorage.getItem("user_login") || "Noma'lum foydalanuvchi"; // Улучшенная обработка по умолчанию
 
   // Объединяем продукты из Product и Partner
   const allProducts = [
@@ -165,13 +166,12 @@ const Kassa = () => {
       { totalUSD: 0, totalSUM: 0 }
     );
 
-    // Получаем данные клиента из формы
     const clientData = sellForm.getFieldsValue();
     const clientName = selectedClient
-      ? clients.find((c) => c._id === selectedClient)?.name
+      ? clients.find((c) => c._id === selectedClient)?.name || "Noma'lum"
       : clientData.clientName || "Noma'lum";
     const clientAddress = selectedClient
-      ? clients.find((c) => c._id === selectedClient)?.address
+      ? clients.find((c) => c._id === selectedClient)?.address || "Noma'lum"
       : clientData.clientAddress || "Noma'lum";
 
     const tableRows = basket
@@ -195,7 +195,7 @@ const Kassa = () => {
         return `
         <tr style="text-align: center;">
           <td style="padding: 8px;">${index + 1}</td>
-          <td style="padding: 8px;">${item.name}</td>
+          <td style="padding: 8px;">${item.name || "Noma'lum mahsulot"}</td>
           <td style="padding: 8px;">${item.size || "-"}</td>
           <td style="padding: 8px;">${item.code || "-"}</td>
           <td style="padding: 8px;">${selectedUnit === "quantity"
@@ -226,11 +226,7 @@ const Kassa = () => {
             <div style="display: flex; flex-direction: column; gap: 10px; width: 50%;">
               <div style="display: flex; flex-direction: column;">
                 <b style="color: #333;">Етказиб берувчи:</b>
-                <p style="margin: 5px 0; color: #555;">"BANKERSUZ GROUP" MCHJ</p>
-              </div>
-              <div style="display: flex; flex-direction: column;">
-                <b style="color: #333;">Манзил:</b>
-                <p style="margin: 5px 0; color: #555;">ГОРОД ТАШКEНТ УЛИЦА НАВОИЙ 16-А</p>
+                <p style="margin: 5px 0; color: #555;">${userLogin}</p>
               </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px; width: 50%;">
@@ -310,7 +306,6 @@ const Kassa = () => {
         document.body.removeChild(element);
       });
   };
-
   // Колонки для таблицы продуктов
   const productsColumn = [
     {

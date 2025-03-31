@@ -34,6 +34,6 @@ export const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const apiSlice = createApi({
   reducerPath: "api", // Путь редьюсера в Redux store
   baseQuery: baseQueryWithReauth, // Кастомный baseQuery с обработкой ошибок
-  tagTypes: ["update", "device", "Product", "Sale", "ProductPartner","Report"], // Теги для управления кэшем
+  tagTypes: ["update", "device", "Product", "Sale", "ProductPartner", "Report","ActPartner"], // Теги для управления кэшем
   endpoints: (builder) => ({}), // Пустые эндпоинты, так как они добавляются через injectEndpoints
 });

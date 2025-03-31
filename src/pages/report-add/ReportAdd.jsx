@@ -22,14 +22,19 @@ import {
      DeleteOutlined,
      PrinterOutlined,
 } from "@ant-design/icons";
+
 import { useGetProductsQuery } from "../../context/service/product.service";
 import { useGetSalesHistoryQuery } from "../../context/service/sotuv.service";
+
 import {
      useGetReportsQuery,
      useCreateReportMutation,
      useUpdateReportMutation,
      useDeleteReportMutation,
 } from "../../context/service/report.service";
+
+import { useGetActPartnersQuery, useCreateActPartnerMutation } from "../../context/service/act-partner.service";
+
 import moment from "moment";
 import "./report-add.css";
 
@@ -39,12 +44,16 @@ const { Option } = Select;
 export default function ReportAdd() {
      const { data: products = [] } = useGetProductsQuery();
      const { data: sales = [] } = useGetSalesHistoryQuery();
+     const { data: partnersFromApi = [], isLoading: partnersLoading } = useGetActPartnersQuery();
+     const [createActPartner] = useCreateActPartnerMutation();
      const [selectedPartner, setSelectedPartner] = useState(null);
      const [isEditModalOpen, setIsEditModalOpen] = useState(false);
      const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+     const [isAddPartnerModalOpen, setIsAddPartnerModalOpen] = useState(false);
      const [form] = Form.useForm();
+     const [partnerForm] = Form.useForm();
 
-     // RTK Query hooks
+     // RTK Query hooks для отчетов
      const {
           data: reportsData = [],
           isLoading,
@@ -60,7 +69,7 @@ export default function ReportAdd() {
      const [deleteReport] = useDeleteReportMutation();
 
      // Combine products and sales to get all partners data
-     const partnersReport = React.useMemo(() => {
+     const partnersReportFromData = React.useMemo(() => {
           return Object.values(
                [...products, ...sales.map(sale => sale.productId)].reduce((acc, product) => {
                     const { name_partner, partner_number } = product;
@@ -74,6 +83,17 @@ export default function ReportAdd() {
                }, {})
           ).filter(partner => partner.partner_number && partner.partner_name);
      }, [products, sales]);
+
+     // Объединяем контрагентов из API и из products/sales
+     const partnersReport = React.useMemo(() => {
+          const combined = [...partnersReportFromData, ...partnersFromApi];
+          return Object.values(
+               combined.reduce((acc, partner) => {
+                    acc[partner.partner_number] = partner;
+                    return acc;
+               }, {})
+          );
+     }, [partnersReportFromData, partnersFromApi]);
 
      // Error handling
      useEffect(() => {
@@ -142,64 +162,100 @@ export default function ReportAdd() {
           }
      };
 
-     // Функция генерации PDF для ReportAdd
+     const handleAddPartner = () => {
+          partnerForm.resetFields();
+          setIsAddPartnerModalOpen(true);
+     };
+
+     const handleAddPartnerSubmit = async (values) => {
+          const newPartner = {
+               partner_name: values.partner_name,
+               partner_number: values.partner_number
+          };
+
+          if (partnersReport.some(partner => partner.partner_number === newPartner.partner_number)) {
+               message.error('Bu kontragent raqami allaqachon mavjud!');
+               return;
+          }
+
+          try {
+               await createActPartner(newPartner).unwrap();
+               message.success('Yangi kontragent qo‘shildi!');
+               setIsAddPartnerModalOpen(false);
+               partnerForm.resetFields();
+          } catch (err) {
+               message.error(err?.data?.message || 'Kontragent qo‘shishda xatolik yuz berdi!');
+          }
+     };
+
+     // Обновленная функция генерации PDF
      const generatePDF = () => {
           const printWindow = window.open("", "", "width=600,height=600");
 
           const tableRows = reportsData
-               .map((item, index) => {
-                    const typeText = item.type === 'debt' ? 'Долг' : item.type === 'payment' ? 'Оплата' : 'Другое';
+               .map((item) => {
+                    const typeText = item.type === 'debt' ? 'Qarz' : item.type === 'payment' ? 'Tolov' : 'Boshqa';
                     return `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${moment(item.date).format("DD.MM.YYYY")}</td>
-                        <td>${typeText}</td>
-                        <td>${item.amount.toLocaleString()}</td>
-                        <td>${item.currency || '-'}</td>
-                        <td>${item.comment || '-'}</td>
+                    <tr style="border-bottom: 1px solid #e8e8e8;">
+                        <td style="padding: 8px; text-align: center;">${moment(item.date).format("DD.MM.YYYY")}</td>
+                        <td style="padding: 8px; text-align: center;">${typeText}</td>
+                        <td style="padding: 8px; text-align: center;">${item.amount.toLocaleString()} ${item.currency || '-'}</td>
+                        <td style="padding: 8px; text-align: center;">${item.comment || '-'}</td>
                     </tr>
                 `;
                })
                .join("");
 
           const content = `
-            <div style="width:210mm; height:297mm; padding:20px; font-family:Arial, sans-serif; color:#001529;">
-                <h2 style="text-align:center; margin-bottom:20px;">
-                    ${moment().format("DD.MM.YYYY")} даги Хисобварак-фактура
-                </h2>
-                <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-                    <div>
-                        <b>Етказиб берувчи:</b><br/>
-                        <p>"BANKERSUZ GROUP" MCHJ</p>
-                        <b>Манзил:</b><br/>
-                        <p>ГОРОД ТАШКEНТ УЛИЦА НАВОИЙ 16-А</p>
-                    </div>
-                    <div>
-                        <b>Сотиб олувчи:</b><br/>
-                        <p>${selectedPartner?.partner_name || "Noma'lum"}</p>
-                        <b>Номер телефон:</b><br/>
-                        <p>${selectedPartner?.partner_number || "Noma'lum"}</p>
-                    </div>
+            <div style="width: 210mm; height: 297mm; padding: 20mm; font-family: 'Times New Roman', serif; color: #333;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="font-size: 18px; font-weight: normal; margin: 0; color: #555;">Хисобварак-фактура</h2>
+                    <p style="font-size: 12px; color: #777; margin: 5px 0 0 0;">
+                        Яратилган сана: ${moment().format("DD.MM.YYYY HH:mm")}
+                    </p>
                 </div>
-                <table border="1" style="border-collapse:collapse; width:100%; text-align:center;">
-                    <thead style="background:#001529; color:white;">
-                        <tr>
-                            <th>No</th>
-                            <th>Дата</th>
-                            <th>Тип</th>
-                            <th>Сумма</th>
-                            <th>Валюта</th>
-                            <th>Комментарий</th>
+
+                <div style="margin-bottom: 20px;">
+                    <p style="font-size: 14px; margin: 0;">
+                        <strong>Контрагент:</strong> ${selectedPartner?.partner_name || 'Не указано'} 
+                        (Телефон раками: ${selectedPartner?.partner_number || 'Не указано'})
+                    </p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                        <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                            <th style="padding: 10px; text-align: center; font-weight: normal;">Сана</th>
+                            <th style="padding: 10px; text-align: center; font-weight: normal;">Тип</th>
+                            <th style="padding: 10px; text-align: center; font-weight: normal;">Сумма</th>
+                            <th style="padding: 10px; text-align: center; font-weight: normal;">Изох</th>
                         </tr>
                     </thead>
-                    <tbody>${tableRows}</tbody>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
                 </table>
+
+             
             </div>
         `;
 
           printWindow.document.write(`
             <html>
-                <head><title>Хисобварак-фактура</title></head>
+                <head>
+                    <title>Хисобварак-фактура</title>
+                    <style>
+                        @media print {
+                            @page {
+                                size: A4;
+                                margin: 0;
+                            }
+                            body {
+                                margin: 0;
+                            }
+                        }
+                    </style>
+                </head>
                 <body>${content}</body>
             </html>
         `);
@@ -226,7 +282,7 @@ export default function ReportAdd() {
                     switch (type) {
                          case 'debt':
                               color = 'red';
-                              text = 'Qarza';
+                              text = 'Qarz';
                               break;
                          case 'payment':
                               color = 'green';
@@ -285,7 +341,15 @@ export default function ReportAdd() {
      return (
           <div style={{ padding: "24px", background: "#f0f2f5" }}>
                <Title level={2} style={{ color: "#001529", marginBottom: "24px" }}>
-                    Ma'lumotlarini boshqarish
+                    Kontragentlar bilan ishlash
+                    <Button
+                         type="primary"
+                         icon={<PlusOutlined />}
+                         style={{ marginLeft: "16px", marginTop: "7px" }}
+                         onClick={handleAddPartner}
+                    >
+                         Qoshish
+                    </Button>
                </Title>
 
                <Card
@@ -301,16 +365,13 @@ export default function ReportAdd() {
                                    >
                                         Malumot qoshish
                                    </Button>
-                                   {/* <Button icon={<EyeOutlined />} onClick={handleViewData}>
-                                        Просмотр данных
-                                   </Button> */}
                               </Space>
                          )
                     }
                >
                     <Select
                          style={{ width: "100%" }}
-                         placeholder="Выберите контрагента"
+                         placeholder="Kontragentni tanlang"
                          onChange={handlePartnerSelect}
                          value={selectedPartner?.partner_number || null}
                          showSearch
@@ -318,6 +379,7 @@ export default function ReportAdd() {
                          filterOption={(input, option) =>
                               (option.children?.toString() || "").toLowerCase().includes(input.toLowerCase())
                          }
+                         loading={partnersLoading}
                     >
                          {partnersReport.map((partner) => (
                               <Option key={partner.partner_number} value={partner.partner_number}>
@@ -335,7 +397,7 @@ export default function ReportAdd() {
                                    type="primary"
                                    icon={<PrinterOutlined />}
                                    onClick={generatePDF}
-                                   disabled={reportsData.length === 0} // Отключаем кнопку, если нет данных
+                                   disabled={reportsData.length === 0}
                               >
                                    Chop etish
                               </Button>
@@ -350,7 +412,7 @@ export default function ReportAdd() {
                               size="middle"
                               scroll={{ x: true }}
                               locale={{
-                                   emptyText: "Нет данных для отображения",
+                                   emptyText: "Ma'lumotlar mavjud emas",
                               }}
                          />
                     </Card>
@@ -441,6 +503,59 @@ export default function ReportAdd() {
                                         onClick={() => {
                                              setIsEditModalOpen(false);
                                              form.resetFields();
+                                        }}
+                                   >
+                                        Bekor qilish
+                                   </Button>
+                                   <Button type="primary" htmlType="submit">
+                                        Saqlash
+                                   </Button>
+                              </div>
+                         </Form.Item>
+                    </Form>
+               </Modal>
+
+               {/* Add Partner Modal */}
+               <Modal
+                    title="Yangi kontragent qo'shish"
+                    open={isAddPartnerModalOpen}
+                    onCancel={() => {
+                         setIsAddPartnerModalOpen(false);
+                         partnerForm.resetFields();
+                    }}
+                    footer={null}
+                    destroyOnClose
+               >
+                    <Form
+                         form={partnerForm}
+                         onFinish={handleAddPartnerSubmit}
+                         layout="vertical"
+                    >
+                         <Form.Item
+                              name="partner_name"
+                              label="Kontragent ismi"
+                              rules={[{ required: true, message: "Kontragent ismini kiriting" }]}
+                         >
+                              <Input placeholder="Masalan: Shukurullo" />
+                         </Form.Item>
+
+                         <Form.Item
+                              name="partner_number"
+                              label="Kontragent raqami"
+                              rules={[
+                                   { required: true, message: "Kontragent raqamini kiriting" },
+                                   { pattern: /^\d+$/, message: "Faqat raqamlar kiritilishi kerak" }
+                              ]}
+                         >
+                              <Input placeholder="Masalan: 400089067" />
+                         </Form.Item>
+
+                         <Form.Item>
+                              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                                   <Button
+                                        onClick={() => {
+                                             setIsAddPartnerModalOpen(false);
+                                             partnerForm.resetFields();
                                         }}
                                    >
                                         Bekor qilish

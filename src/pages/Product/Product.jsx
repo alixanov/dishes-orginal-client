@@ -39,7 +39,7 @@ const generateBarcode = () => {
 
 const BarcodePrint = React.forwardRef(({ barcode }, ref) => (
   <div ref={ref} style={{ width: "4cm", height: "3cm" }}>
-    <Barcode value={barcode} width={2} height={60} fontSize={12} />
+    <Barcode value={barcode} width={1.5} height={50} fontSize={10} />
   </div>
 ));
 
@@ -193,7 +193,7 @@ const Product = () => {
       dataIndex: "name",
       key: "name",
       render: (text, record) => (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {record.image_url ? (
             <img
               src={record.image_url}
@@ -212,66 +212,76 @@ const Product = () => {
                 setImageModalVisible(true);
               }}
             >
-              Rasm yo'q
+              -
             </div>
           )}
           <span>{record.name}</span>
         </div>
       ),
+      width: 200,
     },
     {
-      title: "Xamkor ismi",
+      title: "Xamkor",
       dataIndex: "name_partner",
       key: "name_partner",
       render: (text) => text || "-",
+      width: 120,
     },
     {
-      title: "Xamkor raqami",
+      title: "Raqam",
       dataIndex: "partner_number",
       key: "partner_number",
       render: (text) => text || "-",
+      width: 100,
     },
     {
       title: "Kod",
       dataIndex: "code",
       key: "code",
+      width: 80,
     },
     {
       title: "O'lcham",
       dataIndex: "size",
       key: "size",
+      width: 80,
     },
     {
-      title: "Umumiy vazni(kg)",
+      title: "Vazn (kg)",
       dataIndex: "total_kg",
       key: "total_kg",
-      render: (text) => text?.toFixed(2),
-      align: "center", // Выравнивание чисел по центру
+      render: (text) => (text ? text.toFixed(2) : "-"),
+      align: "center",
+      width: 80,
     },
     {
-      title: "Dona soni",
+      title: "Dona",
       dataIndex: "quantity",
       key: "quantity",
       align: "center",
+      width: 60,
     },
     {
-      title: "Karobka soni",
+      title: "Karobka",
       dataIndex: "box_quantity",
       key: "box_quantity",
-      render: (text) => text?.toFixed(2),
+      render: (text) => (text ? text.toFixed(2) : "-"),
       align: "center",
+      width: 80,
     },
     {
-      title: "Pachka soni",
+      title: "Pachka",
       key: "package_quantity",
       render: (_, record) =>
-        record?.isPackage ? record?.package_quantity?.toFixed(2) : "-",
+        record?.isPackage ? (record?.package_quantity?.toFixed(2) || "-") : "-",
       align: "center",
+      width: 80,
     },
     {
       title: "Valyuta",
       dataIndex: "currency",
       key: "currency",
+      width: 80,
     },
     {
       title: "Tan narxi",
@@ -279,42 +289,47 @@ const Product = () => {
       key: "purchasePrice",
       render: (text, record) => `${record.purchasePrice?.value || "-"}`,
       align: "center",
+      width: 100,
     },
     {
-      title: "Sotish narxi",
+      title: "Sotish",
       dataIndex: "sellingPrice",
       key: "sellingPrice",
       render: (text, record) => `${record.sellingPrice?.value || "-"}`,
       align: "center",
+      width: 100,
     },
     {
       title: "Ombor",
       dataIndex: "warehouse",
       key: "warehouse",
       render: (text, record) => record?.warehouse?.name || "-",
+      width: 120,
     },
     {
-      title: "Shtrix kod",
+      title: "Shtrix",
       dataIndex: "barcode",
       key: "barcode",
+      width: 100,
     },
     {
       title: "Kategoriya",
       dataIndex: "category",
       key: "category",
+      width: 120,
     },
     {
       title: "Amallar",
       render: (_, record) => (
-        <div className="table_actions" style={{ flexDirection: "column" }}>
+        <Space direction="horizontal" size={4}>
           <Button
-            type="primary"
+            type="link"
+            size="small"
             onClick={() => {
               setEditingProduct(record._id);
               setEditingSource(record.source);
               form.setFieldsValue({
                 ...record,
-                barcode: record.barcode,
                 package_quantity: record.package_quantity?.toFixed(2),
                 box_quantity: record.box_quantity?.toFixed(2),
               });
@@ -325,25 +340,26 @@ const Product = () => {
             <MdEdit />
           </Button>
           <Popconfirm
-            title="Mahsulotni o'chirmoqchimisiz"
-            onCancel={() => { }}
+            title="O'chirishni tasdiqlaysizmi?"
             onConfirm={() => handleDelete(record._id, record.source)}
-            okText="O'chirish"
-            cancelText="Orqaga"
+            okText="Ha"
+            cancelText="Yo'q"
           >
-            <Button type="primary">
+            <Button type="link" size="small" danger>
               <MdDeleteForever />
             </Button>
           </Popconfirm>
           <Button
-            type="primary"
+            type="link"
+            size="small"
             onClick={() => setCurrentBarcode(record.barcode)}
           >
             <MdPrint />
           </Button>
-        </div>
+        </Space>
       ),
       align: "center",
+      width: 100,
     },
   ];
 
@@ -363,32 +379,28 @@ const Product = () => {
     <div className="product-container">
       <div className="page_header">
         <Space>
-          <Button
-            type="primary"
-            onClick={handleAddProduct}
-            className="product-add-button"
-          >
+          <Button type="primary" onClick={handleAddProduct} size="small">
             Tovar qo'shish
           </Button>
           <Input
-            placeholder="Tovar nomini kiriting"
+            placeholder="Tovar nomi"
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
-            className="product-search-input"
+            size="small"
+            style={{ width: 150 }}
           />
           <Input
-            placeholder="Shtrix kodni kiriting"
+            placeholder="Shtrix kod"
             value={searchBarcode}
             onChange={(e) => setSearchBarcode(e.target.value)}
-            className="product-search-input"
+            size="small"
+            style={{ width: 150 }}
           />
         </Space>
         <div className="stats">
+          <p>Umumiy dona: {allProducts.reduce((a, b) => a + (b.quantity || 0), 0)}</p>
           <p>
-            Umumiy tovar soni: {allProducts.reduce((a, b) => a + (b.quantity || 0), 0)}
-          </p>
-          <p>
-            Umumiy tovar tan narxi (sum):{" "}
+            Tan narxi (SUM):{" "}
             {allProducts
               .filter((p) => p.currency === "SUM")
               .reduce(
@@ -400,7 +412,7 @@ const Product = () => {
             so'm
           </p>
           <p>
-            Umumiy tovar tan narxi ($):{" "}
+            Tan narxi (USD):{" "}
             {allProducts
               .filter((p) => p.currency === "USD")
               .reduce(
@@ -408,19 +420,21 @@ const Product = () => {
                   acc + (product.quantity || 0) * (product.purchasePrice?.value || 0),
                 0
               )
-              .toLocaleString()}
+              .toLocaleString()}{" "}
             $
           </p>
         </div>
       </div>
 
       <Table
-        className="product-table" // Уникальный класс для таблицы
+        className="product-table"
         columns={columns}
         dataSource={filteredProducts}
         loading={productsLoading || partnerProductsLoading}
-        style={{ overflow: "auto", minWidth: "100%" }}
         rowKey="_id"
+        size="small"
+        pagination={false}
+        scroll={{ x: "max-content" }}
       />
 
       <Modal
@@ -428,7 +442,7 @@ const Product = () => {
         visible={modalVisible}
         onCancel={handleCancel}
         footer={null}
-        className="product-modal"
+        width={600}
       >
         <Form
           autoComplete="off"
@@ -442,84 +456,76 @@ const Product = () => {
             label="Tovar nomi"
             rules={[{ required: true, message: "Tovar nomini kiriting!" }]}
           >
-            <Input placeholder="Tovar nomi" className="product-form-input" />
+            <Input placeholder="Tovar nomi" />
           </Form.Item>
           <Form.Item name="name_partner" label="Xamkor ismi">
-            <Input placeholder="Xamkor ismi" className="product-form-input" />
+            <Input placeholder="Xamkor ismi" />
           </Form.Item>
           <Form.Item name="partner_number" label="Xamkor raqami">
-            <Input placeholder="Xamkor raqami" className="product-form-input" />
+            <Input placeholder="Xamkor raqami" />
           </Form.Item>
           <Form.Item
-            label="Tovar o'lchami"
+            label="O'lcham"
             name="size"
             rules={[{ required: true, message: "O'lchamni kiriting" }]}
           >
-            <Input placeholder="O'lcham" type="text" className="product-form-input" />
+            <Input placeholder="O'lcham" type="text" />
           </Form.Item>
           <Form.Item
             name="code"
-            label="Tovar kodi"
-            rules={[{ required: true, message: "Mahsulot kodini kiriting" }]}
+            label="Kod"
+            rules={[{ required: true, message: "Kod kiriting" }]}
           >
-            <Input placeholder="Kod" type="text" className="product-form-input" />
+            <Input placeholder="Kod" type="text" />
           </Form.Item>
           <Form.Item label="Tan narxi" name={["purchasePrice", "value"]}>
-            <Input placeholder="Tan narxi" type="number" className="product-form-input" />
+            <Input placeholder="Tan narxi" type="number" />
           </Form.Item>
           <Form.Item label="Sotish narxi" name={["sellingPrice", "value"]}>
-            <Input placeholder="Sotish narxi" type="number" className="product-form-input" />
+            <Input placeholder="Sotish narxi" type="number" />
           </Form.Item>
-          <Form.Item label="Umumiy vazni" name="total_kg">
-            <Input placeholder="Umumiy vazni(kg)" type="number" className="product-form-input" />
+          <Form.Item label="Umumiy vazn" name="total_kg">
+            <Input placeholder="Umumiy vazn (kg)" type="number" />
           </Form.Item>
-          <Form.Item label="Dona miqdori" name="quantity">
-            <Input placeholder="Dona miqdori" type="number" className="product-form-input" />
+          <Form.Item label="Dona" name="quantity">
+            <Input placeholder="Dona miqdori" type="number" />
           </Form.Item>
-          <Form.Item label="Pachka miqdori" name="package_quantity">
+          <Form.Item label="Pachka" name="package_quantity">
             <Input
               disabled={!isPackage}
               placeholder="Pachka miqdori"
               type="number"
-              className="product-form-input"
             />
           </Form.Item>
-          <Form.Item label="1 pachkadagi dona miqdori" name="quantity_per_package">
+          <Form.Item label="1 pachkadagi dona" name="quantity_per_package">
             <Input
               disabled={!isPackage}
-              placeholder="1 pachkadagi dona miqdori"
+              placeholder="1 pachkadagi dona"
               type="number"
-              className="product-form-input"
             />
           </Form.Item>
-          <Form.Item label="Karobka miqdori" name="box_quantity">
-            <Input placeholder="Karobka miqdori" type="number" className="product-form-input" />
+          <Form.Item label="Karobka" name="box_quantity">
+            <Input placeholder="Karobka miqdori" type="number" />
           </Form.Item>
           <Form.Item
-            label={`1 karobkadagi ${isPackage ? "pachka" : "dona"} miqdori`}
+            label={`1 karobkadagi ${isPackage ? "pachka" : "dona"}`}
             name="package_quantity_per_box"
           >
             <Input
-              placeholder={`1 karobkadagi ${isPackage ? "pachka" : "dona"} miqdori`}
+              placeholder={`1 karobkadagi ${isPackage ? "pachka" : "dona"}`}
               type="number"
-              className="product-form-input"
             />
           </Form.Item>
           <div className="product-switch">
-            <p className="product-switch-label">
-              Karobka <FaArrowRight /> Dona
-            </p>
+            <span>Karobka → Dona</span>
             <Switch
               checked={isPackage}
               onChange={(checked) => setIsPackage(checked)}
-              className="product-switch-toggle"
             />
-            <p className="product-switch-label">
-              Karobka <FaArrowRight /> Pachka <FaArrowRight /> Dona
-            </p>
+            <span>Karobka → Pachka → Dona</span>
           </div>
           <Form.Item label="Valyuta" name="currency">
-            <Select placeholder="Valyuta tanlash" className="product-form-select">
+            <Select placeholder="Valyuta tanlash">
               <Option value="">Keyin kiritish</Option>
               <Option value="USD">USD</Option>
               <Option value="SUM">SUM</Option>
@@ -530,11 +536,7 @@ const Product = () => {
             name="warehouse"
             rules={[{ required: true, message: "Ombor tanlang!" }]}
           >
-            <Select
-              placeholder="Ombor tanlash"
-              loading={warehousesLoading}
-              className="product-form-select"
-            >
+            <Select placeholder="Ombor tanlash" loading={warehousesLoading}>
               {warehouses.map((warehouse) => (
                 <Option key={warehouse._id} value={warehouse._id}>
                   {warehouse?.name}
@@ -547,7 +549,7 @@ const Product = () => {
             name="category"
             rules={[{ required: true, message: "Kategoriyani kiriting!" }]}
           >
-            <Input placeholder="Kategoriya" className="product-form-input" />
+            <Input placeholder="Kategoriya" />
           </Form.Item>
           <Form.Item label="Barkod" name="barcode" hidden>
             <Input />
@@ -556,26 +558,21 @@ const Product = () => {
             customRequest={({ file }) => handleUpload(file)}
             showUploadList={false}
           >
-            <Button className="product-upload-button">
-              <FaUpload /> Rasmni tanlash
+            <Button>
+              <FaUpload /> Rasm yuklash
             </Button>
           </Upload>
+          {imageUrl && (
+            <div className="product-upload-preview">
+              <img src={imageUrl} alt="Uploaded" className="product-upload-image" />
+              <a href={imageUrl} target="_blank" rel="noopener noreferrer">
+                Rasm URL
+              </a>
+            </div>
+          )}
           <Form.Item>
-            {imageUrl && (
-              <div className="product-upload-preview">
-                <p>Yuklangan rasm:</p>
-                <img src={imageUrl} alt="Uploaded" className="product-upload-image" />
-                <p>
-                  <a href={imageUrl} target="_blank" rel="noopener noreferrer">
-                    Rasm URL manzili
-                  </a>
-                </p>
-              </div>
-            )}
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" className="product-submit-button">
-              {editingProduct ? "Tahrirlash" : "Tovar qo'shish"}
+            <Button type="primary" htmlType="submit" block>
+              {editingProduct ? "Tahrirlash" : "Qo'shish"}
             </Button>
           </Form.Item>
         </Form>
@@ -586,18 +583,11 @@ const Product = () => {
         visible={imageModalVisible}
         onCancel={handleImageModalCancel}
         footer={null}
-        className="image-modal"
       >
         {selectedImage ? (
-          <img
-            src={selectedImage}
-            alt="Enlarged"
-            className="enlarged-image"
-          />
+          <img src={selectedImage} alt="Enlarged" className="enlarged-image" />
         ) : (
-          <div className="no-image-placeholder">
-            Rasm yo'q
-          </div>
+          <div className="no-image-placeholder">Rasm yo'q</div>
         )}
       </Modal>
 
