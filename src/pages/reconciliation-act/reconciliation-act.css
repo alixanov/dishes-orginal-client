@@ -7,106 +7,140 @@
      border-collapse: collapse !important;
 }
 
-.partner-table .ant-table-container {
-     border: 1px solid #d9d9d9 !important;
+/* Таблицы (общие стили) */
+.partner-table .ant-table,
+.client-table .ant-table {
+  font-size: 12px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.partner-table .ant-table-thead>tr>th {
-     background: #f5f5f5 !important;
-     color: #333;
-     font-weight: 600;
-     border: 1px solid #d9d9d9 !important;
-     padding: 12px 16px !important;
-     text-align: left;
-}
-
-.partner-table .ant-table-tbody>tr>td {
-     border: 1px solid #d9d9d9 !important;
-     padding: 12px 16px !important;
-     color: #555;
-     background: #fff !important;
-}
-
-.partner-table .ant-table-tbody>tr:hover>td {
-     background: #f0f5ff !important;
-}
-
-.partner-table .ant-table-tbody>tr>td,
-.partner-table .ant-table-thead>tr>th {
-     text-align: left !important;
-}
-
-.partner-table .ant-table-tbody>tr>td.ant-table-column-align-center,
-.partner-table .ant-table-thead>tr>th.ant-table-column-align-center {
-     text-align: center !important;
-}
-
-/* Стили для таблицы Xaridorlar */
-.client-table {
-     overflow: auto;
-     min-width: 100%;
-     background: #fff;
-     border: 1px solid #d9d9d9 !important;
-     border-collapse: collapse !important;
-}
-
+.partner-table .ant-table-container,
 .client-table .ant-table-container {
-     border: 1px solid #d9d9d9 !important;
+  border: 1px solid #e8ecef;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.client-table .ant-table-thead>tr>th {
-     background: #f5f5f5 !important;
-     color: #333;
-     font-weight: 600;
-     border: 1px solid #d9d9d9 !important;
-     padding: 12px 16px !important;
-     text-align: left;
+/* Заголовки таблицы */
+.partner-table .ant-table-thead > tr > th,
+.client-table .ant-table-thead > tr > th {
+  background: #001529; /* Темно-синий фон */
+  color: #fff; /* Белый текст */
+  font-weight: 600;
+  border-bottom: 2px solid #e8ecef;
+  padding: 10px 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
 }
 
-.client-table .ant-table-tbody>tr>td {
-     border: 1px solid #d9d9d9 !important;
-     padding: 12px 16px !important;
-     color: #555;
-     background: #fff !important;
+.partner-table .ant-table-thead > tr > th::after,
+.client-table .ant-table-thead > tr > th::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 10%;
+  height: 80%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.2); /* Мелкие разделительные линии между заголовками */
 }
 
-.client-table .ant-table-tbody>tr:hover>td {
-     background: #f0f5ff !important;
+.partner-table .ant-table-thead > tr > th:last-child::after,
+.client-table .ant-table-thead > tr > th:last-child::after {
+  display: none; /* Убираем линию у последнего заголовка */
 }
 
-.client-table .ant-table-tbody>tr>td,
-.client-table .ant-table-thead>tr>th {
-     text-align: left !important;
+/* Ячейки таблицы */
+.partner-table .ant-table-tbody > tr > td,
+.client-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #e8ecef;
+  padding: 10px 12px;
+  color: #333;
+  background: #fff;
+  transition: background 0.3s ease;
 }
 
-.client-table .ant-table-tbody>tr>td.ant-table-column-align-center,
-.client-table .ant-table-thead>tr>th.ant-table-column-align-center {
-     text-align: center !important;
+.partner-table .ant-table-tbody > tr:hover > td,
+.client-table .ant-table-tbody > tr:hover > td {
+  background: #d1e6ff; /* Светло-голубой фон при наведении */
 }
 
-/* Стили для формы в Tooltip */
+.partner-table .ant-table-tbody > tr > td,
+.client-table .ant-table-tbody > tr > td,
+.partner-table .ant-table-thead > tr > th,
+.client-table .ant-table-thead > tr > th {
+  text-align: left;
+  border-right: 1px solid #e8ecef; /* Мелкие вертикальные линии между столбцами */
+}
+
+.partner-table .ant-table-tbody > tr > td:last-child,
+.client-table .ant-table-tbody > tr > td:last-child,
+.partner-table .ant-table-thead > tr > th:last-child,
+.client-table .ant-table-thead > tr > th:last-child {
+  border-right: none; /* Убираем линию у последнего столбца */
+}
+
+.partner-table .ant-table-column-align-center,
+.client-table .ant-table-column-align-center {
+  text-align: center !important;
+}
+
+/* Чередуем цвета строк */
+.partner-table .ant-table-tbody > tr:nth-child(even) > td,
+.client-table .ant-table-tbody > tr:nth-child(even) > td {
+background: #f0f7ff;
+     /* Светло-голубой фон при наведении */}
+
+.partner-table .ant-table-tbody > tr:nth-child(even):hover > td,
+.client-table .ant-table-tbody > tr:nth-child(even):hover > td {
+background: #e0eeff;
+     /* Светло-голубой фон при наведении */
+}
+
+/* Кнопки в столбце "Amallar" */
+.table_actions .ant-btn {
+  border-radius: 4px;
+  font-size: 12px;
+  height: 28px;
+}
+
+.table_actions .ant-btn-primary {
+  background: #1890ff;
+  border-color: #1890ff;
+}
+
+.table_actions .ant-btn-primary:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* Форма в Tooltip */
 .modal_form {
-     display: flex;
-     flex-direction: column;
-     gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .modal_form input,
 .modal_form select {
-     padding: 4px;
-     border: 1px solid #d9d9d9;
-     border-radius: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #d9d9d9;
+  font-size: 12px;
 }
 
 .modal_form button {
-     padding: 4px 8px;
-     background: #001529;
-     color: white;
-     border: none;
-     border-radius: 4px;
-     cursor: pointer;
+  padding: 4px 8px;
+  background: #1890ff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .modal_form button:hover {
-     background: #003a8c;
+  background: #40a9ff;
 }

@@ -11,48 +11,55 @@ import {
   useGetUsersQuery,
   useDeleteAdminMutation,
   useUpdateAdminMutation,
-} from "../../context/service/adminlar.service"; // API xizmatini import qilish
+} from "../../context/service/adminlar.service";
+import "./adminlar.css";
 
 const { confirm } = Modal;
 
 export default function Adminlar() {
-  const [isModalVisible, setIsModalVisible] = useState(false); // Modal holatini boshqarish
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false); // Tahrirlash modal holatini boshqarish
-  const [editingAdmin, setEditingAdmin] = useState(null); // Tahrirlanayotgan admin holati
-  const [signUpAsAdmin] = useSignUpAsAdminMutation(); // API hook
-  const { data: admins, isLoading, error, refetch } = useGetUsersQuery(); // Foydalanuvchilarni olish hooki
-  const [deleteAdmin] = useDeleteAdminMutation(); // O'chirish mutationi
-  const [updateAdmin] = useUpdateAdminMutation(); // Adminni yangilash mutationi
-  const [form] = Form.useForm(); // Form obyekti yaratish
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editingAdmin, setEditingAdmin] = useState(null);
+  const [signUpAsAdmin] = useSignUpAsAdminMutation();
+  const { data: admins, isLoading, error, refetch } = useGetUsersQuery();
+  const [deleteAdmin] = useDeleteAdminMutation();
+  const [updateAdmin] = useUpdateAdminMutation();
+  const [form] = Form.useForm();
 
   const showModal = () => {
-    setIsModalVisible(true); // Modalni ko'rsatish
+    setIsModalVisible(true);
   };
 
   const handleCancel = () => {
-    setIsModalVisible(false); // Modalni yopish
-    form.resetFields(); // Forma ma'lumotlarini tozalash
+    setIsModalVisible(false);
+    form.resetFields();
   };
 
   const handleEditCancel = () => {
-    setIsEditModalVisible(false); // Tahrirlash modalini yopish
-    setEditingAdmin(null); // Tahrirlanayotgan adminni tozalash
-    form.resetFields(); // Forma ma'lumotlarini tozalash
+    setIsEditModalVisible(false);
+    setEditingAdmin(null);
+    form.resetFields();
   };
 
   const handleFinish = async (values) => {
     const { name, login, password, role, success } = values;
 
     const permissions = {
-      xisobot: success.includes("xisobot"),
-      qarzdorlar: success.includes("qarzdorlar"),
-      xarajatlar: success.includes("xarajatlar"),
-      skaladorlar: success.includes("skaladorlar"),
-      vazvratlar: success.includes("vazvratlar"),
-      adminlar: success.includes("adminlar"),
-      sotuv_tarixi: success.includes("sotuv_tarixi"),
-      dokon: success.includes("dokon"),
-      SalesStatistics: success.includes("SalesStatistics"),
+      home: success.includes("home"),
+      statistika: success.includes("statistika"),
+      admin: success.includes("admin"),
+      ombor: success.includes("ombor"),
+      kassa: success.includes("kassa"),
+      product: success.includes("product"),
+      partner: success.includes("partner"),
+      client: success.includes("client"),
+      debtors: success.includes("debtors"),
+      promo: success.includes("promo"),
+      sales: success.includes("sales"),
+      brak: success.includes("brak"),
+      expense: success.includes("expense"),
+      report: success.includes("report"),
+      reportAdd: success.includes("reportAdd"),
     };
 
     const payload = {
@@ -67,8 +74,8 @@ export default function Adminlar() {
       const response = await signUpAsAdmin(payload).unwrap();
       message.success("Foydalanuvchi muvaffaqiyatli qo'shildi!");
       setIsModalVisible(false);
-      form.resetFields(); // Forma ma'lumotlarini tozalash
-      refetch(); // Foydalanuvchilar ro'yxatini yangilash
+      form.resetFields();
+      refetch();
     } catch (err) {
       message.error("Foydalanuvchini qo'shishda xatolik yuz berdi.");
     }
@@ -78,15 +85,21 @@ export default function Adminlar() {
     const { name, login, password, role, success } = values;
 
     const permissions = {
-      xisobot: success.includes("xisobot"),
-      qarzdorlar: success.includes("qarzdorlar"),
-      xarajatlar: success.includes("xarajatlar"),
-      skaladorlar: success.includes("skaladorlar"),
-      vazvratlar: success.includes("vazvratlar"),
-      adminlar: success.includes("adminlar"),
-      sotuv_tarixi: success.includes("sotuv_tarixi"),
-      dokon: success.includes("dokon"),
-      SalesStatistics: success.includes("SalesStatistics"),
+      home: success.includes("home"),
+      statistika: success.includes("statistika"),
+      admin: success.includes("admin"),
+      ombor: success.includes("ombor"),
+      kassa: success.includes("kassa"),
+      product: success.includes("product"),
+      partner: success.includes("partner"),
+      client: success.includes("client"),
+      debtors: success.includes("debtors"),
+      promo: success.includes("promo"),
+      sales: success.includes("sales"),
+      brak: success.includes("brak"),
+      expense: success.includes("expense"),
+      report: success.includes("report"),
+      reportAdd: success.includes("reportAdd"),
     };
 
     const payload = {
@@ -103,25 +116,23 @@ export default function Adminlar() {
       message.success("Foydalanuvchi muvaffaqiyatli yangilandi!");
       setIsEditModalVisible(false);
       setEditingAdmin(null);
-      form.resetFields(); // Forma ma'lumotlarini tozalash
-      refetch(); // Foydalanuvchilar ro'yxatini yangilash
+      form.resetFields();
+      refetch();
     } catch (err) {
       message.error("Foydalanuvchini yangilashda xatolik yuz berdi.");
     }
   };
 
-  // O'chirish funksiyasi
   const handleDelete = async (id) => {
     try {
       const response = await deleteAdmin(id).unwrap();
       message.success("Foydalanuvchi muvaffaqiyatli o'chirildi!");
-      refetch(); // Foydalanuvchilar ro'yxatini yangilash
+      refetch();
     } catch (error) {
       message.error("Foydalanuvchini o'chirishda xatolik yuz berdi.");
     }
   };
 
-  // Tasdiqlash oynasi ko'rsatish funksiyasi
   const showDeleteConfirm = (id) => {
     confirm({
       title: "Bu foydalanuvchini o'chirishni istaysizmi?",
@@ -136,7 +147,6 @@ export default function Adminlar() {
     });
   };
 
-  // Jadval uchun ustunlarni aniqlash
   const columns = [
     {
       title: "Ism",
@@ -154,67 +164,102 @@ export default function Adminlar() {
       key: "role",
     },
     {
-      title: "Xisobot",
-      dataIndex: ["success", "xisobot"],
-      key: "xisobot",
-      render: (text) => (text ? "Ha" : "Yo'q"),
-    },
-    {
-      title: "Qarzdorlar",
-      dataIndex: ["success", "qarzdorlar"],
-      key: "qarzdorlar",
-      render: (text) => (text ? "Ha" : "Yo'q"),
-    },
-    {
-      title: "Xarajatlar",
-      dataIndex: ["success", "xarajatlar"],
-      key: "xarajatlar",
-      render: (text) => (text ? "Ha" : "Yo'q"),
-    },
-    {
-      title: "Skaladorlar",
-      dataIndex: ["success", "skaladorlar"],
-      key: "skaladorlar",
-      render: (text) => (text ? "Ha" : "Yo'q"),
-    },
-    {
-      title: "Vazvratlar",
-      dataIndex: ["success", "vazvratlar"],
-      key: "vazvratlar",
-      render: (text) => (text ? "Ha" : "Yo'q"),
-    },
-    {
-      title: "Adminlar",
-      dataIndex: ["success", "adminlar"],
-      key: "adminlar",
-      render: (text) => (text ? "Ha" : "Yo'q"),
-    },
-    {
-      title: "Sotuv tarixi",
-      dataIndex: ["success", "sotuv_tarixi"],
-      key: "sotuv_tarixi",
-      render: (text) => (text ? "Ha" : "Yo'q"),
-    },
-    {
-      title: "Dokon",
-      dataIndex: ["success", "dokon"],
-      key: "dokon",
+      title: "Bosh sahifa",
+      dataIndex: ["success", "home"],
+      key: "home",
       render: (text) => (text ? "Ha" : "Yo'q"),
     },
     {
       title: "Statistika",
-      dataIndex: ["success", "SalesStatistics"],
-      key: "SalesStatistics",
+      dataIndex: ["success", "statistika"],
+      key: "statistika",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Adminlar",
+      dataIndex: ["success", "admin"],
+      key: "admin",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Omborlar",
+      dataIndex: ["success", "ombor"],
+      key: "ombor",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Kassa",
+      dataIndex: ["success", "kassa"],
+      key: "kassa",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Mahsulotlar",
+      dataIndex: ["success", "product"],
+      key: "product",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Yetqazib beruvchilar",
+      dataIndex: ["success", "partner"],
+      key: "partner",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Xaridorlar",
+      dataIndex: ["success", "client"],
+      key: "client",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Qarzdorlar",
+      dataIndex: ["success", "debtors"],
+      key: "debtors",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Promokodlar",
+      dataIndex: ["success", "promo"],
+      key: "promo",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Sotilgan Mahsulotlar",
+      dataIndex: ["success", "sales"],
+      key: "sales",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Brak Mahsulotlar",
+      dataIndex: ["success", "brak"],
+      key: "brak",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Rasxodlar",
+      dataIndex: ["success", "expense"],
+      key: "expense",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Dalolatnoma",
+      dataIndex: ["success", "report"],
+      key: "report",
+      render: (text) => (text ? "Ha" : "Yo'q"),
+    },
+    {
+      title: "Qoldiq qo'shish",
+      dataIndex: ["success", "reportAdd"],
+      key: "reportAdd",
       render: (text) => (text ? "Ha" : "Yo'q"),
     },
     {
       title: "Amallar",
       key: "actions",
       render: (_, record) => (
-        <>
+        <div className="admin__actions__card">
           <Button
             type="primary"
-            style={{ marginRight: "10px" }}
             onClick={() => {
               setEditingAdmin(record);
               setIsEditModalVisible(true);
@@ -235,10 +280,9 @@ export default function Adminlar() {
             type="primary"
             danger
             onClick={() => showDeleteConfirm(record._id)}
-        icon={<DeleteOutlined /> }
-          >
-          </Button>
-        </>
+            icon={<DeleteOutlined />}
+          />
+        </div>
       ),
     },
   ];
@@ -247,23 +291,21 @@ export default function Adminlar() {
     <div>
       <Button
         type="primary"
-        icon={<UserAddOutlined />} // Ikonka qo'shish
-        onClick={showModal} // Foydalanuvchi qo'shish tugmasi bosilganda modalni ko'rsatish
+        icon={<UserAddOutlined />}
+        onClick={showModal}
         style={{ marginBottom: "10px" }}
       >
         Foydalanuvchi qo'shish
       </Button>
 
-      {/* Modal */}
       <Modal
         title="Foydalanuvchi Qo'shish"
         open={isModalVisible}
         onCancel={handleCancel}
         footer={null}
-        style={{ marginTop: "50px" }} // CSS qiymatini to'g'ri formatda berish
+        style={{ marginTop: "50px" }}
       >
         <Form layout="vertical" onFinish={handleFinish} form={form}>
-          {/* Name input */}
           <Form.Item
             label="Ism"
             name="name"
@@ -271,8 +313,6 @@ export default function Adminlar() {
           >
             <Input placeholder="Ism" />
           </Form.Item>
-
-          {/* Login input */}
           <Form.Item
             label="Login"
             name="login"
@@ -280,8 +320,6 @@ export default function Adminlar() {
           >
             <Input placeholder="Login" />
           </Form.Item>
-
-          {/* Password input */}
           <Form.Item
             label="Parol"
             name="password"
@@ -289,8 +327,6 @@ export default function Adminlar() {
           >
             <Input.Password placeholder="Parol" />
           </Form.Item>
-
-          {/* Role input */}
           <Form.Item
             label="Role"
             name="role"
@@ -298,23 +334,25 @@ export default function Adminlar() {
           >
             <Input placeholder="Role" />
           </Form.Item>
-
-          {/* Ruxsatlar input */}
           <Form.Item label="Ruxsatlar" name="success">
             <Checkbox.Group>
-              <Checkbox value="xisobot">Xisobot</Checkbox>
-              <Checkbox value="qarzdorlar">Qarzdorlar</Checkbox>
-              <Checkbox value="xarajatlar">Xarajatlar</Checkbox>
-              <Checkbox value="skaladorlar">Skaladorlar</Checkbox>
-              <Checkbox value="vazvratlar">Vazvratlar</Checkbox>
-              <Checkbox value="adminlar">Adminlar</Checkbox>
-              <Checkbox value="sotuv_tarixi">Sotuv tarixi</Checkbox>
-              <Checkbox value="dokon">Dokon</Checkbox>
-              <Checkbox value="SalesStatistics">Statistika</Checkbox>
+              <Checkbox value="home">Bosh sahifa</Checkbox>
+              <Checkbox value="statistika">Statistika</Checkbox>
+              <Checkbox value="admin">Adminlar</Checkbox>
+              <Checkbox value="ombor">Omborlar</Checkbox>
+              <Checkbox value="kassa">Kassa</Checkbox>
+              <Checkbox value="product">Mahsulotlar</Checkbox>
+              <Checkbox value="partner">Yetqazib beruvchilar</Checkbox>
+              <Checkbox value="client">Xaridorlar</Checkbox>
+              <Checkbox value="debtors">Qarzdorlar</Checkbox>
+              <Checkbox value="promo">Promokodlar</Checkbox>
+              <Checkbox value="sales">Sotilgan Mahsulotlar</Checkbox>
+              <Checkbox value="brak">Brak Mahsulotlar</Checkbox>
+              <Checkbox value="expense">Rasxodlar</Checkbox>
+              <Checkbox value="report">Dalolatnoma</Checkbox>
+              <Checkbox value="reportAdd">Qoldiq qo'shish</Checkbox>
             </Checkbox.Group>
           </Form.Item>
-
-          {/* Formni saqlash tugmasi */}
           <Form.Item>
             <Button type="primary" htmlType="submit" block>
               Saqlash
@@ -323,7 +361,6 @@ export default function Adminlar() {
         </Form>
       </Modal>
 
-      {/* Tahrirlash Modal */}
       <Modal
         title="Foydalanuvchini Tahrirlash"
         open={isEditModalVisible}
@@ -332,7 +369,6 @@ export default function Adminlar() {
         style={{ marginTop: "50px" }}
       >
         <Form layout="vertical" onFinish={handleEditFinish} form={form}>
-          {/* Name input */}
           <Form.Item
             label="Ism"
             name="name"
@@ -340,8 +376,6 @@ export default function Adminlar() {
           >
             <Input placeholder="Ism" />
           </Form.Item>
-
-          {/* Login input */}
           <Form.Item
             label="Login"
             name="login"
@@ -349,8 +383,6 @@ export default function Adminlar() {
           >
             <Input placeholder="Login" />
           </Form.Item>
-
-          {/* Password input */}
           <Form.Item
             label="Parol"
             name="password"
@@ -358,8 +390,6 @@ export default function Adminlar() {
           >
             <Input.Password placeholder="Parol" />
           </Form.Item>
-
-          {/* Role input */}
           <Form.Item
             label="Role"
             name="role"
@@ -367,23 +397,25 @@ export default function Adminlar() {
           >
             <Input placeholder="Role" />
           </Form.Item>
-
-          {/* Ruxsatlar input */}
           <Form.Item label="Ruxsatlar" name="success">
             <Checkbox.Group>
-              <Checkbox value="xisobot">Xisobot</Checkbox>
-              <Checkbox value="qarzdorlar">Qarzdorlar</Checkbox>
-              <Checkbox value="xarajatlar">Xarajatlar</Checkbox>
-              <Checkbox value="skaladorlar">Skaladorlar</Checkbox>
-              <Checkbox value="vazvratlar">Vazvratlar</Checkbox>
-              <Checkbox value="adminlar">Adminlar</Checkbox>
-              <Checkbox value="sotuv_tarixi">Sotuv tarixi</Checkbox>
-              <Checkbox value="dokon">Dokon</Checkbox>
-              <Checkbox value="SalesStatistics">Statistika</Checkbox>
+              <Checkbox value="home">Bosh sahifa</Checkbox>
+              <Checkbox value="statistika">Statistika</Checkbox>
+              <Checkbox value="admin">Adminlar</Checkbox>
+              <Checkbox value="ombor">Omborlar</Checkbox>
+              <Checkbox value="kassa">Kassa</Checkbox>
+              <Checkbox value="product">Mahsulotlar</Checkbox>
+              <Checkbox value="partner">Yetqazib beruvchilar</Checkbox>
+              <Checkbox value="client">Xaridorlar</Checkbox>
+              <Checkbox value="debtors">Qarzdorlar</Checkbox>
+              <Checkbox value="promo">Promokodlar</Checkbox>
+              <Checkbox value="sales">Sotilgan Mahsulotlar</Checkbox>
+              <Checkbox value="brak">Brak Mahsulotlar</Checkbox>
+              <Checkbox value="expense">Rasxodlar</Checkbox>
+              <Checkbox value="report">Dalolatnoma</Checkbox>
+              <Checkbox value="reportAdd">Qoldiq qo'shish</Checkbox>
             </Checkbox.Group>
           </Form.Item>
-
-          {/* Formni saqlash tugmasi */}
           <Form.Item>
             <Button type="primary" htmlType="submit" block>
               Saqlash
@@ -392,13 +424,12 @@ export default function Adminlar() {
         </Form>
       </Modal>
 
-      {/* Foydalanuvchilarni ko'rsatish uchun jadval */}
       <Table
         dataSource={admins}
         columns={columns}
         loading={isLoading}
         rowKey="_id"
-        pagination={{ pageSize: 10 }} // Har bir sahifada 10 ta yozuv
+        pagination={{ pageSize: 10 }}
       />
     </div>
   );

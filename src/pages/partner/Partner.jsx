@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useGetProductsQuery } from '../../context/service/product.service';
 import { useGetProductsPartnerQuery } from '../../context/service/partner.service';
-import { Card, Col, Row, Modal, Table, Typography, Space } from 'antd';
+import { Card, Col, Row, Modal, Table, Typography, Space, Input } from 'antd';
 import { MdScale } from 'react-icons/md';
-import './partner.css'; // Fayl nomini o'zgartirdim
+import './partner.css';
 
 const { Title, Text } = Typography;
 
@@ -12,6 +12,8 @@ const Partner = () => {
      const { data: hamkorMahsulotlari = [] } = useGetProductsPartnerQuery();
      const [tanlanganHamkor, setTanlanganHamkor] = useState(null);
      const [modalKoʻrinadi, setModalKoʻrinadi] = useState(false);
+     const [searchName, setSearchName] = useState(""); // Поле для поиска по имени
+     const [searchNumber, setSearchNumber] = useState(""); // Поле для поиска по номеру
 
      // Mahsulotlarni birlashtiramiz
      const barchaMahsulotlar = [
@@ -29,14 +31,22 @@ const Partner = () => {
           })),
      ];
 
-     // Unikal hamkorlarni olamiz
+     // Unikal hamkorlarni olamiz va filtrlaymiz
      const unikalHamkorlar = Array.from(
           new Map(
                barchaMahsulotlar
                     .filter((p) => p.hamkor_nomi && p.hamkor_raqami)
                     .map((p) => [p.hamkor_nomi, { nom: p.hamkor_nomi, raqam: p.hamkor_raqami }])
           ).values()
-     );
+     ).filter((hamkor) => {
+          const matchesName = hamkor.nom
+               .toLowerCase()
+               .includes(searchName.toLowerCase());
+          const matchesNumber = hamkor.raqam
+               .toLowerCase()
+               .includes(searchNumber.toLowerCase());
+          return matchesName && matchesNumber;
+     });
 
      // Tanlangan hamkor bo'yicha mahsulotlarni filtrlaymiz
      const filtrlanganMahsulotlar = tanlanganHamkor
@@ -118,8 +128,25 @@ const Partner = () => {
      return (
           <div style={{ padding: '24px', background: '#f0f2f5' }}>
                <Title level={2} style={{ color: '#001529', marginBottom: '24px' }}>
-                    Kontragent va mahsulotlar
+                    Yetkazib beruvchilar
                </Title>
+
+               {/* Поля для поиска */}
+               <Space style={{ marginBottom: '24px' }}>
+                    <Input
+                         style={{ width: '300px' }}
+                         placeholder="Ismini kiriting"
+                         value={searchName}
+                         onChange={(e) => setSearchName(e.target.value)}
+                    />
+                    <Input
+                         style={{ width: '200px' }}
+                         placeholder="Telefon raqam kiriting"
+                         value={searchNumber}
+                         onChange={(e) => setSearchNumber(e.target.value)}
+                    />
+               </Space>
+
                <Row gutter={[16, 16]}>
                     {unikalHamkorlar.map((hamkor, indeks) => (
                          <Col xs={24} sm={12} md={8} lg={6} key={indeks}>

@@ -172,7 +172,10 @@ const Expense = () => {
           <DatePicker.RangePicker placeholder={["Dan", "Gacha"]} onChange={handleDateFilterChange} />
         </div>
       </div>
-      <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>
+      <Button type="primary" icon={<PlusOutlined />} onClick={showModal}
+        style={{ marginBottom: "10px", marginTop: "10px" }}
+
+      >
         Rasxod qo'shish
       </Button>
       <Table

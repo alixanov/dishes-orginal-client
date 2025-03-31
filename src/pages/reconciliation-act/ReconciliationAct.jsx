@@ -11,17 +11,17 @@ import {
     Tooltip,
 } from "antd";
 import { PrinterOutlined } from "@ant-design/icons";
-import { 
-    useGetClientsQuery, 
-    useGetClientHistoryQuery 
+import {
+    useGetClientsQuery,
+    useGetClientHistoryQuery
 } from "../../context/service/client.service";
 import { useGetProductsQuery } from "../../context/service/product.service";
 import { useGetSalesHistoryQuery } from "../../context/service/sotuv.service";
-import { 
-    useGetDebtsByClientQuery, 
-    usePayDebtMutation 
+import {
+    useGetDebtsByClientQuery,
+    usePayDebtMutation
 } from "../../context/service/debt.service";
-import { useGetReportsQuery } from "../../context/service/report.service"; // Добавляем импорт
+import { useGetReportsQuery } from "../../context/service/report.service";
 import moment from "moment";
 import "./reconciliation-act.css";
 
@@ -40,24 +40,27 @@ export default function ReconciliationAct() {
     const [showClientSelect, setShowClientSelect] = useState(false);
     const [filteredPartnerProducts, setFilteredPartnerProducts] = useState([]);
     const [filteredClientData, setFilteredClientData] = useState([]);
-    
+
+    // Получаем имя пользователя (поставщика) из localStorage
+    const supplierName = localStorage.getItem("user_login") || "BANKERSUZ GROUP MCHJ";
+
     const { data: clientHistory = [] } = useGetClientHistoryQuery(selectedClient?._id, {
         skip: !selectedClient,
     });
     const { data: debts = [] } = useGetDebtsByClientQuery(selectedClient?._id, {
         skip: !selectedClient,
     });
-    const { data: reports = [] } = useGetReportsQuery(selectedPartner?.partner_number, {
-        skip: !selectedPartner
-    }); // Добавляем получение данных из ReportAdd
+    const { data: reports = [] } = useGetReportsQuery(
+        selectedPartner?.partner_number || selectedClient?._id,
+        { skip: !selectedPartner && !selectedClient }
+    );
     const [payDebt] = usePayDebtMutation();
 
-    // Комбинирование продуктов и продаж для Xamkorlar с учетом ReportAdd
     const combinedProducts = [
-        ...products.map(product => ({
+        ...products.map((product) => ({
             ...product,
             quantity: product.quantity || 1,
-            createdAt: product.createdAt
+            createdAt: product.createdAt,
         })),
         ...sales.map((sale) => {
             const relatedProduct = products.find((p) => p.name === sale.productId.name);
@@ -66,21 +69,21 @@ export default function ReconciliationAct() {
                 name_partner: relatedProduct?.name_partner || "Unknown",
                 partner_number: relatedProduct?.partner_number || "Unknown",
                 quantity: sale.quantity,
-                createdAt: sale.createdAt
+                createdAt: sale.createdAt,
             };
         }),
     ];
 
     const partnersReport = Object.values(
         combinedProducts.reduce((acc, product) => {
-            const { 
-                name_partner, 
-                partner_number, 
-                purchasePrice, 
-                quantity, 
-                name, 
-                currency, 
-                createdAt 
+            const {
+                name_partner,
+                partner_number,
+                purchasePrice,
+                quantity,
+                name,
+                currency,
+                createdAt
             } = product;
 
             if (!acc[partner_number]) {
@@ -89,7 +92,6 @@ export default function ReconciliationAct() {
                     partner_number,
                     total_purchase: 0,
                     products: [],
-                    reportDates: new Map() // Добавляем для хранения дат из ReportAdd
                 };
             }
 
@@ -108,7 +110,7 @@ export default function ReconciliationAct() {
                     purchase_price: purchasePrice?.value || 0,
                     currency,
                     total_price: quantity * (purchasePrice?.value || 0),
-                    createdAt
+                    createdAt,
                 });
             }
 
@@ -116,194 +118,60 @@ export default function ReconciliationAct() {
         }, {})
     );
 
-    // Интеграция дат из ReportAdd
-    useEffect(() => {
-        if (selectedPartner && reports.length > 0) {
-            const partnerData = partnersReport.find(p => p.partner_number === selectedPartner.partner_number);
-            if (partnerData) {
-                reports.forEach(report => {
-                    partnerData.reportDates.set(report._id, report.date);
-                });
-            }
-        }
-    }, [selectedPartner, reports]);
-
-    // Функция генерации PDF для Xamkorlar с датой из ReportAdd
-    const generatePDF = (number) => {
-        const printWindow = window.open("", "", "width=600,height=600");
-        const partner = partnersReport?.find((p) => p.partner_number === number);
-
-        const tableRows = filteredPartnerProducts
-            .map((item, index) => {
-                const reportDate = partner.reportDates.size > 0 
-                    ? moment([...partner.reportDates.values()][0]).format("DD.MM.YYYY") 
-                    : (item.createdAt ? moment(item.createdAt).format("DD.MM.YYYY") : "-");
-                return `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${item.product_name}</td>
-                        <td>${item.total_quantity}</td>
-                        <td>${item.purchase_price}</td>
-                        <td>${item.currency}</td>
-                        <td>${item.total_price}</td>
-                        <td>${reportDate}</td>
-                    </tr>
-                `;
-            })
-            .join("");
-
-        const content = `
-            <div style="width:210mm; height:297mm; padding:20px; font-family:Arial, sans-serif; color:#001529;">
-                <h2 style="text-align:center; margin-bottom:20px;">
-                    ${moment().format("DD.MM.YYYY")} даги Хисобварак-фактура
-                </h2>
-                <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-                    <div>
-                        <b>Етказиб берувчи:</b><br/>
-                        <p>"BANKERSUZ GROUP" MCHJ</p>
-                        <b>Манзил:</b><br/>
-                        <p>ГОРОД ТАШКEНТ УЛИЦА НАВОИЙ 16-А</p>
-                    </div>
-                    <div>
-                        <b>Сотиб олувчи:</b><br/>
-                        <p>${partner?.partner_name || "Noma'lum"}</p>
-                    </div>
-                </div>
-                <table border="1" style="border-collapse:collapse; width:100%; text-align:center;">
-                    <thead style="background:#001529; color:white;">
-                        <tr>
-                            <th>No</th>
-                            <th>Махсулот номи</th>
-                            <th>Миқдор</th>
-                            <th>Нарх</th>
-                            <th>Валюта</th>
-                            <th>Умумий сумма</th>
-                            <th>Сана</th>
-                        </tr>
-                    </thead>
-                    <tbody>${tableRows}</tbody>
-                </table>
-            </div>
-        `;
-
-        printWindow.document.write(`
-            <html>
-                <head><title>Хисобварак-фактура</title></head>
-                <body>${content}</body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.print();
-        printWindow.close();
-    };
-
-    // Остальная часть generateClientPDF остается без изменений
-    const generateClientPDF = (clientId) => {
-        const printWindow = window.open("", "", "width=600,height=600");
-        const client = clients.find((c) => c._id === clientId);
-
-        const tableRows = filteredClientData
-            .map(
-                (item, index) => `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${item.productId?.name || "-"}</td>
-                        <td>${item.quantity || "-"}</td>
-                        <td>${item.sellingPrice || "-"}</td>
-                        <td>${item.currency || "-"}</td>
-                        <td>${item.discount || "-"}</td>
-                        <td>${item.sellingPrice && item.quantity ? item.sellingPrice * item.quantity : "-"}</td>
-                        <td>${item.remainingAmount || "-"}</td>
-                        <td>${item.type === "debt" ? (item.status === "paid" ? "To'langan" : "To'lanmagan") : "Sotilgan"}</td>
-                        <td>${moment(item.createdAt).format("DD.MM.YYYY")}</td>
-                    </tr>
-                `
-            )
-            .join("");
-
-        const content = `
-            <div style="width:210mm; height:297mm; padding:20px; font-family:Arial, sans-serif; color:#001529;">
-                <h2 style="text-align:center; margin-bottom:20px;">
-                    ${moment().format("DD.MM.YYYY")} даги Хисобварак-фактура
-                </h2>
-                <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-                    <div>
-                        <b>Етказиб берувчи:</b><br/>
-                        <p>"BANKERSUZ GROUP" MCHJ</p>
-                        <b>Манзил:</b><br/>
-                        <p>ГОРОД ТАШКEНТ УЛИЦА НАВОИЙ 16-А</p>
-                    </div>
-                    <div>
-                        <b>Сотиб олувчи:</b><br/>
-                        <p>${client?.name || "Noma'lum"}</p>
-                        <b>Telefon raqami:</b><br/>
-                        <p>${client?.phone || "Noma'lum"}</p>
-                    </div>
-                </div>
-                <table border="1" style="border-collapse:collapse; width:100%; text-align:center;">
-                    <thead style="background:#001529; color:white;">
-                        <tr>
-                            <th>No</th>
-                            <th>Tovar nomi</th>
-                            <th>Soni</th>
-                            <th>Sotish narxi</th>
-                            <th>Valyuta</th>
-                            <th>Chegirma(%)</th>
-                            <th>Umumiy summa</th>
-                            <th>Qoldiq qarz</th>
-                            <th>Holati</th>
-                            <th>Sana</th>
-                        </tr>
-                    </thead>
-                    <tbody>${tableRows}</tbody>
-                </table>
-            </div>
-        `;
-
-        printWindow.document.write(`
-            <html>
-                <head><title>Хисобварак-фактура</title></head>
-                <body>${content}</body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.print();
-        printWindow.close();
-    };
-
-    // Логика фильтрации для Xamkorlar с учетом ReportAdd
     useEffect(() => {
         if (!selectedPartner) {
             setFilteredPartnerProducts([]);
             return;
         }
 
-        let filtered = selectedPartner.products.map(product => {
-            const reportDate = reports.length > 0 
-                ? reports[0].date // Берем первую дату из ReportAdd (можно изменить логику)
-                : product.createdAt;
-            return {
-                ...product,
-                createdAt: reportDate // Переопределяем дату
-            };
+        const relatedReports = reports.filter((r) => r.partnerId === selectedPartner.partner_number);
+
+        let filtered = selectedPartner.products.map((product) => {
+            const report = relatedReports.find((r) => r.comment === product.product_name || r.date >= product.createdAt);
+            const reportDate = report ? report.date : product.createdAt;
+            return { ...product, reportDate, type: "product" };
         });
 
+        const reportEntries = relatedReports.map((report) => ({
+            product_name: report.comment || "Hisobot",
+            total_quantity: 1,
+            purchase_price: report.amount || 0,
+            currency: report.currency || "USD",
+            total_price: report.amount || 0,
+            reportDate: report.date,
+            type: report.type,
+        }));
+
+        filtered = [...filtered, ...reportEntries];
+
         if (startDate && endDate) {
-            filtered = filtered.filter((product) => {
-                if (!product.createdAt) return false;
-                const createdAt = moment(product.createdAt).toDate();
-                return createdAt >= moment(startDate).startOf("day").toDate() &&
-                    createdAt <= moment(endDate).endOf("day").toDate();
+            filtered = filtered.filter((item) => {
+                if (!item.reportDate) return false;
+                const dateToFilter = moment(item.reportDate).toDate();
+                return (
+                    dateToFilter >= moment(startDate).startOf("day").toDate() &&
+                    dateToFilter <= moment(endDate).endOf("day").toDate()
+                );
             });
         }
 
         setFilteredPartnerProducts(filtered);
     }, [selectedPartner, startDate, endDate, reports]);
 
-    // Логика фильтрации для Xaridorlar остается без изменений
     const combinedData = [
         ...(clientHistory?.map((sale) => ({ ...sale, type: "sale" })) || []),
         ...(debts?.map((debt) => ({ ...debt, type: "debt" })) || []),
+        ...(reports
+            .filter((r) => r.clientId === selectedClient?._id)
+            .map((report) => ({
+                ...report,
+                productId: { name: "Hisobot" },
+                quantity: 1,
+                sellingPrice: report.amount,
+                currency: report.currency,
+                createdAt: report.date,
+                type: report.type,
+            })) || []),
     ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     useEffect(() => {
@@ -318,13 +186,162 @@ export default function ReconciliationAct() {
             filtered = combinedData.filter((item) => {
                 if (!item.createdAt) return false;
                 const createdAt = moment(item.createdAt).toDate();
-                return createdAt >= moment(startDate).startOf("day").toDate() &&
-                    createdAt <= moment(endDate).endOf("day").toDate();
+                return (
+                    createdAt >= moment(startDate).startOf("day").toDate() &&
+                    createdAt <= moment(endDate).endOf("day").toDate()
+                );
             });
         }
 
         setFilteredClientData(filtered);
     }, [selectedClient, startDate, endDate, combinedData]);
+
+    const generatePDF = (number) => {
+        const printWindow = window.open("", "", "width=600,height=600");
+        const partner = partnersReport?.find((p) => p.partner_number === number);
+        if (!partner) return;
+
+        const tableRows = filteredPartnerProducts
+            .map((item, index) => {
+                const reportDate = item.reportDate
+                    ? moment(item.reportDate).format("DD.MM.YYYY")
+                    : "-";
+                const typeText = item.type === "debt" ? "Qarz" : item.type === "payment" ? "To'lov" : item.type === "other" ? "Boshqa" : "Mahsulot";
+                return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${item.product_name}</td>
+            <td>${item.total_quantity}</td>
+            <td>${item.purchase_price}</td>
+            <td>${item.currency}</td>
+            <td>${item.total_price}</td>
+            <td>${typeText}</td>
+            <td>${reportDate}</td>
+          </tr>
+        `;
+            })
+            .join("");
+
+        const content = `
+      <div style="width:210mm; height:297mm; padding:20px; font-family:Arial, sans-serif; color:#001529;">
+        <h2 style="text-align:center; margin-bottom:20px;">
+          ${moment().format("DD.MM.YYYY")} даги Хисобварак-фактура
+        </h2>
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+          <div>
+            <b>Етказиб берувчи:</b><br/>
+            <p>${supplierName}</p>
+          </div>
+          <div>
+            <b>Сотиб олувчи:</b><br/>
+            <p>${partner?.partner_name || "Noma'lum"}</p>
+          </div>
+        </div>
+        <table border="1" style="border-collapse:collapse; width:100%; text-align:center;">
+          <thead style="background:#001529; color:white;">
+            <tr>
+              <th>No</th>
+              <th>Махсулот номи</th>
+              <th>Миқдор</th>
+              <th>Нарх</th>
+              <th>Валюта</th>
+              <th>Умумий сумма</th>
+              <th>Тип</th>
+              <th>Сана</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    `;
+
+        printWindow.document.write(`
+      <html>
+        <head><title>Хисобварак-фактура</title></head>
+        <body>${content}</body>
+      </html>
+    `);
+        printWindow.document.close();
+        printWindow.print();
+        printWindow.close();
+    };
+
+    const generateClientPDF = (clientId) => {
+        const printWindow = window.open("", "", "width=600,height=600");
+        const client = clients.find((c) => c._id === clientId);
+        if (!client) return;
+
+        const tableRows = filteredClientData
+            .map((item, index) => {
+                const reportDate = item.type === "debt" || item.type === "payment" || item.type === "other"
+                    ? moment(item.createdAt).format("DD.MM.YYYY")
+                    : item.createdAt
+                        ? moment(item.createdAt).format("DD.MM.YYYY")
+                        : "-";
+                return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${item.productId?.name || "Hisobot"}</td>
+            <td>${item.quantity || "-"}</td>
+            <td>${item.sellingPrice || item.amount || "-"}</td>
+            <td>${item.currency || "-"}</td>
+            <td>${item.discount || "-"}</td>
+            <td>${item.sellingPrice && item.quantity ? (item.sellingPrice * item.quantity).toLocaleString() : item.amount || "-"}</td>
+            <td>${item.remainingAmount || "-"}</td>
+            <td>${item.type === "debt" ? (item.status === "paid" ? "To'langan" : "To'lanmagan") : item.type === "sale" ? "Sotilgan" : item.type}</td>
+            <td>${reportDate}</td>
+          </tr>
+        `;
+            })
+            .join("");
+
+        const content = `
+      <div style="width:210mm; height:297mm; padding:20px; font-family:Arial, sans-serif; color:#001529;">
+        <h2 style="text-align:center; margin-bottom:20px;">
+          ${moment().format("DD.MM.YYYY")} даги Хисобварак-фактура
+        </h2>
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+          <div>
+            <b>Етказиб берувчи:</b><br/>
+            <p>${supplierName}</p>
+          </div>
+          <div>
+            <b>Сотиб олувчи:</b><br/>
+            <p>${client?.name || "Noma'lum"}</p>
+            <b>Telefon raqami:</b><br/>
+            <p>${client?.phone || "Noma'lum"}</p>
+          </div>
+        </div>
+        <table border="1" style="border-collapse:collapse; width:100%; text-align:center;">
+          <thead style="background:#001529; color:white;">
+            <tr>
+              <th>No</th>
+              <th>Tovar nomi</th>
+              <th>Soni</th>
+              <th>Sotish narxi</th>
+              <th>Valyuta</th>
+              <th>Chegirma(%)</th>
+              <th>Umumiy summa</th>
+              <th>Qoldiq qarz</th>
+              <th>Holati</th>
+              <th>Sana</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    `;
+
+        printWindow.document.write(`
+      <html>
+        <head><title>Хисобварак-фактура</title></head>
+        <body>${content}</body>
+      </html>
+    `);
+        printWindow.document.close();
+        printWindow.print();
+        printWindow.close();
+    };
 
     const handlePayDebt = async (debtId, amount, currency) => {
         try {
@@ -347,14 +364,36 @@ export default function ReconciliationAct() {
         { title: "Valyuta", dataIndex: "currency", key: "currency" },
         { title: "Umumiy summa", dataIndex: "total_price", key: "total_price", align: "center" },
         {
+            title: "Tip",
+            dataIndex: "type",
+            key: "type",
+            render: (type) => {
+                let text = "";
+                switch (type) {
+                    case "debt":
+                        text = "Qarz";
+                        break;
+                    case "payment":
+                        text = "To'lov";
+                        break;
+                    case "other":
+                        text = "Boshqa";
+                        break;
+                    default:
+                        text = "Mahsulot";
+                }
+                return text;
+            },
+        },
+        {
             title: "Sana",
-            dataIndex: "createdAt",
-            key: "createdAt",
-            render: (text) => text ? moment(text).format("DD.MM.YYYY") : "-",
+            dataIndex: "reportDate",
+            key: "reportDate",
+            render: (text) => (text ? moment(text).format("DD.MM.YYYY") : "-"),
             sorter: (a, b) => {
-                if (!a.createdAt || !b.createdAt) return 0;
-                return moment(a.createdAt).unix() - moment(b.createdAt).unix();
-            }
+                if (!a.reportDate || !b.reportDate) return 0;
+                return moment(a.reportDate).unix() - moment(b.reportDate).unix();
+            },
         },
     ];
 
@@ -369,9 +408,10 @@ export default function ReconciliationAct() {
             title: "Umumiy summa",
             key: "total",
             align: "center",
-            render: (_, record) => {
-                return record.sellingPrice && record.quantity ? record.sellingPrice * record.quantity : "-";
-            },
+            render: (_, record) =>
+                record.sellingPrice && record.quantity
+                    ? (record.sellingPrice * record.quantity).toLocaleString()
+                    : record.amount || "-",
         },
         { title: "Qoldiq qarz", dataIndex: "remainingAmount", key: "amount", align: "center" },
         {
@@ -379,17 +419,17 @@ export default function ReconciliationAct() {
             dataIndex: "type",
             key: "type",
             render: (_, record) =>
-                record.type === "debt" ? (record.status === "paid" ? "To'langan" : "To'lanmagan") : "Sotilgan",
+                record.type === "debt" ? (record.status === "paid" ? "To'langan" : "To'lanmagan") : record.type === "sale" ? "Sotilgan" : record.type,
         },
         {
             title: "Sana",
             dataIndex: "createdAt",
             key: "createdAt",
-            render: (text) => text ? moment(text).format("DD.MM.YYYY") : "-",
+            render: (text) => (text ? moment(text).format("DD.MM.YYYY") : "-"),
             sorter: (a, b) => {
                 if (!a.createdAt || !b.createdAt) return 0;
                 return moment(a.createdAt).unix() - moment(b.createdAt).unix();
-            }
+            },
         },
         {
             title: "Amallar",
@@ -446,7 +486,7 @@ export default function ReconciliationAct() {
     return (
         <div style={{ padding: "24px", background: "#f0f2f5" }}>
             <Title level={2} style={{ color: "#001529", marginBottom: "24px" }}>
-                Xisob varaq fakturasi
+                Solishtirma dalolatnomasi
             </Title>
 
             <Space style={{ marginBottom: "24px" }}>
@@ -460,7 +500,7 @@ export default function ReconciliationAct() {
                         setEndDate(null);
                     }}
                 >
-                    Kontragent
+                    Yetkazib beruvchi
                 </Button>
                 <Button
                     type="primary"
@@ -559,6 +599,7 @@ export default function ReconciliationAct() {
                         dataSource={filteredPartnerProducts}
                         rowKey={(record, index) => index}
                         pagination={false}
+                        bordered
                     />
                 </div>
             )}
@@ -583,6 +624,7 @@ export default function ReconciliationAct() {
                         dataSource={filteredClientData}
                         rowKey="_id"
                         pagination={false}
+                        bordered
                     />
                 </div>
             )}

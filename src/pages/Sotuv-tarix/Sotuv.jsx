@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useGetSalesHistoryQuery } from "../../context/service/sales.service";
-import { DatePicker, Input, Select, Table } from "antd";
+import { DatePicker, Input, Select, Table, Button, Space } from "antd";
+import { PrinterOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { useGetClientsQuery } from "../../context/service/client.service";
+
+const { Option } = Select;
 
 const Sales = () => {
   const { data: clients = [] } = useGetClientsQuery();
@@ -15,6 +18,9 @@ const Sales = () => {
     selectedClient: "",
   });
   const [filteredSales, setFilteredSales] = useState([]);
+
+  // Получаем имя пользователя (поставщика) из localStorage
+  const supplierName = localStorage.getItem("user_login") || "Noma'lum";
 
   useEffect(() => {
     setFilteredSales(
@@ -40,6 +46,75 @@ const Sales = () => {
       })
     );
   }, [filters, sales]);
+
+  // Функция для генерации PDF для одной продажи
+  const generatePDF = (sale) => {
+    const printWindow = window.open("", "", "width=600,height=600");
+
+    // Проверяем, удалось ли открыть окно
+    if (!printWindow) {
+      alert("Iltimos, brauzeringizda pop-up oynalarni ruxsat bering!");
+      return;
+    }
+
+    const totalPrice = (sale.sellingPrice || 0) * (sale.quantity || 0);
+    const paymentMethodText = sale.paymentMethod === "cash" ? "Naqd" : sale.paymentMethod === "card" ? "Karta" : "Noma'lum";
+    const clientName = sale.clientId?.name || "Noma'lum";
+
+    const tableRow = `
+      <tr>
+        <td>1</td>
+        <td>${sale.productId?.name || "Noma'lum"}</td>
+        <td>${sale.quantity || 0}</td>
+        <td>${sale.sellingPrice || 0}</td>
+        <td>${totalPrice.toLocaleString()}</td>
+        <td>${paymentMethodText}</td>
+        <td>${moment(sale.createdAt).format("DD.MM.YYYY HH:mm")}</td>
+      </tr>
+    `;
+
+    const content = `
+      <div style="width:210mm; height:297mm; padding:20px; font-family:Arial, sans-serif; color:#001529;">
+        <h2 style="text-align:center; margin-bottom:20px;">
+          ${moment().format("DD.MM.YYYY")} даги Хисобварак-фактура
+        </h2>
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+          <div>
+            <b>Етказиб берувчи:</b><br/>
+            <p>${supplierName}</p>
+          </div>
+          <div>
+            <b>Сотиб олувчи:</b><br/>
+            <p>${clientName}</p>
+          </div>
+        </div>
+        <table border="1" style="border-collapse:collapse; width:100%; text-align:center;">
+          <thead style="background:#001529; color:white;">
+            <tr>
+              <th>No</th>
+              <th>Mahsulot nomi</th>
+              <th>Soni</th>
+              <th>Sotish narxi</th>
+              <th>Umumiy summa</th>
+              <th>To'lov usuli</th>
+              <th>Sotish sanasi</th>
+            </tr>
+          </thead>
+          <tbody>${tableRow}</tbody>
+        </table>
+      </div>
+    `;
+
+    printWindow.document.write(`
+      <html>
+        <head><title>Хисобварак-фактура - ${clientName}</title></head>
+        <body>${content}</body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+    printWindow.close();
+  };
 
   const columns = [
     { title: "Mijoz ismi", dataIndex: ["clientId", "name"], key: "clientId" },
@@ -80,6 +155,19 @@ const Sales = () => {
       key: "createdAt",
       render: (text) => moment(text).format("DD.MM.YYYY HH:mm"),
     },
+    {
+      title: "Harakat",
+      key: "actions",
+      render: (_, record) => (
+        <Button
+          type="primary"
+          icon={<PrinterOutlined />}
+          onClick={() => generatePDF(record)}
+        >
+          Chop etish
+        </Button>
+      ),
+    },
   ];
 
   if (isLoading) {
@@ -91,47 +179,51 @@ const Sales = () => {
       <div className="page_header">
         <h1>Sotilgan Mahsulotlar</h1>
         <div className="header_actions">
-          <Input
-            style={{ width: "300px" }}
-            placeholder="Mahsulot nomi"
-            onChange={(e) => setFilters({ ...filters, productName: e.target.value })}
-          />
-          <Input
-            style={{ width: "200px" }}
-            placeholder="Mahsulot kodi"
-            onChange={(e) => setFilters({ ...filters, productCode: e.target.value })}
-          />
-          <Select
-            style={{ width: "150px" }}
-            onChange={(value) => setFilters({ ...filters, selectedClient: value })}
-          >
-            <Select.Option value="">Barchasi</Select.Option>
-            {clients.map((client) => (
-              <Select.Option key={client._id} value={client._id}>
-                {client.name}
-              </Select.Option>
-            ))}
-          </Select>
-          <Select
-            style={{ width: "150px" }}
-            placeholder="To'lov usuli"
-            onChange={(value) => setFilters({ ...filters, paymentMethod: value })}
-          >
-            <Select.Option value="">Barchasi</Select.Option>
-            <Select.Option value="cash">Naqd</Select.Option>
-            <Select.Option value="card">Karta</Select.Option>
-          </Select>
-          <DatePicker.RangePicker
-            style={{ width: "300px" }}
-            placeholder={["Dan", "Gacha"]}
-            onChange={(dates, dateStrings) => {
-              if (!dateStrings[0] || !dateStrings[1]) {
-                setFilters({ ...filters, dateRange: [] });
-              } else {
-                setFilters({ ...filters, dateRange: dateStrings });
-              }
-            }}
-          />
+          <Space>
+            <Input
+              style={{ width: "300px" }}
+              placeholder="Mahsulot nomi"
+              onChange={(e) => setFilters({ ...filters, productName: e.target.value })}
+            />
+            <Input
+              style={{ width: "200px" }}
+              placeholder="Mahsulot kodi"
+              onChange={(e) => setFilters({ ...filters, productCode: e.target.value })}
+            />
+            <Select
+              style={{ width: "150px" }}
+              onChange={(value) => setFilters({ ...filters, selectedClient: value })}
+              value={filters.selectedClient}
+            >
+              <Option value="">Barchasi</Option>
+              {clients.map((client) => (
+                <Option key={client._id} value={client._id}>
+                  {client.name}
+                </Option>
+              ))}
+            </Select>
+            <Select
+              style={{ width: "150px" }}
+              placeholder="To'lov usuli"
+              onChange={(value) => setFilters({ ...filters, paymentMethod: value })}
+              value={filters.paymentMethod}
+            >
+              <Option value="">Barchasi</Option>
+              <Option value="cash">Naqd</Option>
+              <Option value="card">Karta</Option>
+            </Select>
+            <DatePicker.RangePicker
+              style={{ width: "300px" }}
+              placeholder={["Dan", "Gacha"]}
+              onChange={(dates, dateStrings) => {
+                if (!dateStrings[0] || !dateStrings[1]) {
+                  setFilters({ ...filters, dateRange: [] });
+                } else {
+                  setFilters({ ...filters, dateRange: dateStrings });
+                }
+              }}
+            />
+          </Space>
         </div>
       </div>
       <Table columns={columns} dataSource={filteredSales} rowKey="_id" />

@@ -4,38 +4,37 @@ import { apiSlice } from "./api.service";
 export const reportApi = apiSlice.injectEndpoints({
      endpoints: (builder) => ({
           getReports: builder.query({
-               query: (partnerId) => `/reports?partnerId=${partnerId}`,
+               query: (id) => `/reports?id=${id}`, // Изменяем параметр на более общий "id"
                transformResponse: (response) => {
-                    // Обеспечиваем, что возвращаем массив
                     if (Array.isArray(response?.data)) return response.data;
                     if (Array.isArray(response)) return response;
                     return [];
                },
                providesTags: (result) =>
-                    result ? [...result.map(({ _id }) => ({ type: 'Report', id: _id })), 'Report'] : ['Report'],
+                    result ? [...result.map(({ _id }) => ({ type: "Report", id: _id })), "Report"] : ["Report"],
           }),
           createReport: builder.mutation({
                query: (reportData) => ({
-                    url: '/reports/add',
-                    method: 'POST',
+                    url: "/reports/add",
+                    method: "POST",
                     body: reportData,
                }),
-               invalidatesTags: ['Report'],
+               invalidatesTags: ["Report"],
           }),
           updateReport: builder.mutation({
                query: ({ id, ...reportData }) => ({
                     url: `/reports/${id}`,
-                    method: 'PUT',
+                    method: "PUT",
                     body: reportData,
                }),
-               invalidatesTags: (_, __, { id }) => [{ type: 'Report', id }],
+               invalidatesTags: (_, __, { id }) => [{ type: "Report", id }],
           }),
           deleteReport: builder.mutation({
                query: (id) => ({
                     url: `/reports/${id}`,
-                    method: 'DELETE',
+                    method: "DELETE",
                }),
-               invalidatesTags: (_, __, id) => [{ type: 'Report', id }],
+               invalidatesTags: (_, __, id) => [{ type: "Report", id }],
           }),
      }),
 });

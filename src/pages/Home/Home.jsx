@@ -117,7 +117,7 @@ export default function Home() {
             Mahsulotlar
           </Menu.Item>
           <Menu.Item key="partner" icon={<UserSwitchOutlined />}>
-            Kontragent
+            Yetqazib beruvchilar
           </Menu.Item>
         
           <Menu.Item key="client" icon={<TeamOutlined />}>
@@ -143,10 +143,11 @@ export default function Home() {
           </Menu.Item>
 
           <Menu.Item key="report" icon={< ScheduleOutlined  />}>
-            Act sverka
+          Dalolatnoma
           </Menu.Item>
           <Menu.Item key="report-add" icon={<UserAddOutlined />}>
-            Act +
+            Qoldiq qo'shish
+
           </Menu.Item>
 
         </Menu>

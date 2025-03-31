@@ -345,7 +345,7 @@ const Product = () => {
             okText="Ha"
             cancelText="Yo'q"
           >
-            <Button type="link" size="small" danger>
+            <Button type="link" size="small" danger style={{color:"red"}} > 
               <MdDeleteForever />
             </Button>
           </Popconfirm>
@@ -435,6 +435,7 @@ const Product = () => {
         size="small"
         pagination={false}
         scroll={{ x: "max-content" }}
+        bordered
       />
 
       <Modal
@@ -575,7 +576,7 @@ const Product = () => {
               {editingProduct ? "Tahrirlash" : "Qo'shish"}
             </Button>
           </Form.Item>
-        </Form>
+        </Form>``
       </Modal>
 
       <Modal
@@ -583,6 +584,7 @@ const Product = () => {
         visible={imageModalVisible}
         onCancel={handleImageModalCancel}
         footer={null}
+        className="modal__image"
       >
         {selectedImage ? (
           <img src={selectedImage} alt="Enlarged" className="enlarged-image" />
