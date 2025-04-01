@@ -21,14 +21,12 @@ export default function Adminlar() {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [signUpAsAdmin] = useSignUpAsAdminMutation();
-  const { data: admins, isLoading, error, refetch } = useGetUsersQuery();
+  const { data: admins, isLoading, refetch } = useGetUsersQuery();
   const [deleteAdmin] = useDeleteAdminMutation();
   const [updateAdmin] = useUpdateAdminMutation();
   const [form] = Form.useForm();
 
-  const showModal = () => {
-    setIsModalVisible(true);
-  };
+  const showModal = () => setIsModalVisible(true);
 
   const handleCancel = () => {
     setIsModalVisible(false);
@@ -42,36 +40,31 @@ export default function Adminlar() {
   };
 
   const handleFinish = async (values) => {
-    const { name, login, password, role, success } = values;
+    const { name, login, password, role } = values;
 
+    // Устанавливаем значения по умолчанию для permissions, если success не передается
     const permissions = {
-      home: success.includes("home"),
-      statistika: success.includes("statistika"),
-      admin: success.includes("admin"),
-      ombor: success.includes("ombor"),
-      kassa: success.includes("kassa"),
-      product: success.includes("product"),
-      partner: success.includes("partner"),
-      client: success.includes("client"),
-      debtors: success.includes("debtors"),
-      promo: success.includes("promo"),
-      sales: success.includes("sales"),
-      brak: success.includes("brak"),
-      expense: success.includes("expense"),
-      report: success.includes("report"),
-      reportAdd: success.includes("reportAdd"),
+      home: false,
+      statistika: false,
+      admin: false,
+      ombor: false,
+      kassa: false,
+      product: false,
+      partner: false,
+      client: false,
+      debtors: false,
+      promo: false,
+      sales: false,
+      brak: false,
+      expense: false,
+      report: false,
+      "report-add": false,
     };
 
-    const payload = {
-      name,
-      login,
-      password,
-      role,
-      success: permissions,
-    };
+    const payload = { name, login, password, role, success: permissions };
 
     try {
-      const response = await signUpAsAdmin(payload).unwrap();
+      await signUpAsAdmin(payload).unwrap();
       message.success("Foydalanuvchi muvaffaqiyatli qo'shildi!");
       setIsModalVisible(false);
       form.resetFields();
@@ -82,7 +75,7 @@ export default function Adminlar() {
   };
 
   const handleEditFinish = async (values) => {
-    const { name, login, password, role, success } = values;
+    const { name, login, password, role, success = [] } = values;
 
     const permissions = {
       home: success.includes("home"),
@@ -99,7 +92,7 @@ export default function Adminlar() {
       brak: success.includes("brak"),
       expense: success.includes("expense"),
       report: success.includes("report"),
-      reportAdd: success.includes("reportAdd"),
+      "report-add": success.includes("report-add"),
     };
 
     const payload = {
@@ -112,7 +105,7 @@ export default function Adminlar() {
     };
 
     try {
-      const response = await updateAdmin(payload).unwrap();
+      await updateAdmin(payload).unwrap();
       message.success("Foydalanuvchi muvaffaqiyatli yangilandi!");
       setIsEditModalVisible(false);
       setEditingAdmin(null);
@@ -125,7 +118,7 @@ export default function Adminlar() {
 
   const handleDelete = async (id) => {
     try {
-      const response = await deleteAdmin(id).unwrap();
+      await deleteAdmin(id).unwrap();
       message.success("Foydalanuvchi muvaffaqiyatli o'chirildi!");
       refetch();
     } catch (error) {
@@ -148,21 +141,9 @@ export default function Adminlar() {
   };
 
   const columns = [
-    {
-      title: "Ism",
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: "Login",
-      dataIndex: "login",
-      key: "login",
-    },
-    {
-      title: "Role",
-      dataIndex: "role",
-      key: "role",
-    },
+    { title: "Ism", dataIndex: "name", key: "name" },
+    { title: "Login", dataIndex: "login", key: "login" },
+    { title: "Role", dataIndex: "role", key: "role" },
     {
       title: "Bosh sahifa",
       dataIndex: ["success", "home"],
@@ -243,14 +224,14 @@ export default function Adminlar() {
     },
     {
       title: "Dalolatnoma",
-      dataIndex: ["success", "report"],
+      dataumers: ["success", "report"],
       key: "report",
       render: (text) => (text ? "Ha" : "Yo'q"),
     },
     {
       title: "Qoldiq qo'shish",
-      dataIndex: ["success", "reportAdd"],
-      key: "reportAdd",
+      dataIndex: ["success", "report-add"],
+      key: "report-add",
       render: (text) => (text ? "Ha" : "Yo'q"),
     },
     {
@@ -334,25 +315,6 @@ export default function Adminlar() {
           >
             <Input placeholder="Role" />
           </Form.Item>
-          <Form.Item label="Ruxsatlar" name="success">
-            <Checkbox.Group>
-              <Checkbox value="home">Bosh sahifa</Checkbox>
-              <Checkbox value="statistika">Statistika</Checkbox>
-              <Checkbox value="admin">Adminlar</Checkbox>
-              <Checkbox value="ombor">Omborlar</Checkbox>
-              <Checkbox value="kassa">Kassa</Checkbox>
-              <Checkbox value="product">Mahsulotlar</Checkbox>
-              <Checkbox value="partner">Yetqazib beruvchilar</Checkbox>
-              <Checkbox value="client">Xaridorlar</Checkbox>
-              <Checkbox value="debtors">Qarzdorlar</Checkbox>
-              <Checkbox value="promo">Promokodlar</Checkbox>
-              <Checkbox value="sales">Sotilgan Mahsulotlar</Checkbox>
-              <Checkbox value="brak">Brak Mahsulotlar</Checkbox>
-              <Checkbox value="expense">Rasxodlar</Checkbox>
-              <Checkbox value="report">Dalolatnoma</Checkbox>
-              <Checkbox value="reportAdd">Qoldiq qo'shish</Checkbox>
-            </Checkbox.Group>
-          </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block>
               Saqlash
@@ -366,7 +328,7 @@ export default function Adminlar() {
         open={isEditModalVisible}
         onCancel={handleEditCancel}
         footer={null}
-        style={{ marginTop: "50px" }}
+        style={{ marginTop: "50MORpx" }}
       >
         <Form layout="vertical" onFinish={handleEditFinish} form={form}>
           <Form.Item
@@ -413,7 +375,7 @@ export default function Adminlar() {
               <Checkbox value="brak">Brak Mahsulotlar</Checkbox>
               <Checkbox value="expense">Rasxodlar</Checkbox>
               <Checkbox value="report">Dalolatnoma</Checkbox>
-              <Checkbox value="reportAdd">Qoldiq qo'shish</Checkbox>
+              <Checkbox value="report-add">Qoldiq qo'shish</Checkbox>
             </Checkbox.Group>
           </Form.Item>
           <Form.Item>

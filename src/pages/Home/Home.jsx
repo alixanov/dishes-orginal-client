@@ -163,6 +163,8 @@ export default function Home() {
           style={{
             padding: 6,
             minHeight: 280,
+            minWidth: 280,
+
           }}
         >
           {renderContent()}
