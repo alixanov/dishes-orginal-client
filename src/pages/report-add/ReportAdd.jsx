@@ -23,6 +23,7 @@ import {
      PrinterOutlined,
 } from "@ant-design/icons";
 import { useGetProductsQuery } from "../../context/service/product.service";
+import { useGetProductsPartnerQuery } from "../../context/service/partner.service"; // Добавляем для партнерских продуктов
 import { useGetSalesHistoryQuery } from "../../context/service/sotuv.service";
 import {
      useGetReportsQuery,
@@ -31,7 +32,7 @@ import {
      useDeleteReportMutation,
 } from "../../context/service/report.service";
 import { useGetActPartnersQuery, useCreateActPartnerMutation } from "../../context/service/act-partner.service";
-import { useGetClientsQuery } from "../../context/service/client.service";
+import { useGetClientsQuery, useCreateClientMutation } from "../../context/service/client.service";
 import moment from "moment";
 import "./report-add.css";
 
@@ -41,16 +42,20 @@ const { TabPane } = Tabs;
 
 export default function ReportAdd() {
      const { data: products = [] } = useGetProductsQuery();
+     const { data: partnerProducts = [] } = useGetProductsPartnerQuery(); // Добавляем партнерские продукты
      const { data: sales = [] } = useGetSalesHistoryQuery();
      const { data: partnersFromApi = [], isLoading: partnersLoading } = useGetActPartnersQuery();
      const { data: clients = [], isLoading: clientsLoading } = useGetClientsQuery();
      const [createActPartner] = useCreateActPartnerMutation();
+     const [createClient] = useCreateClientMutation();
      const [selectedPartner, setSelectedPartner] = useState(null);
      const [selectedClient, setSelectedClient] = useState(null);
      const [isEditModalOpen, setIsEditModalOpen] = useState(false);
      const [isAddPartnerModalOpen, setIsAddPartnerModalOpen] = useState(false);
+     const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
      const [form] = Form.useForm();
      const [partnerForm] = Form.useForm();
+     const [clientForm] = Form.useForm();
      const [activeTab, setActiveTab] = useState("partners");
 
      const {
@@ -67,30 +72,36 @@ export default function ReportAdd() {
      const [updateReport] = useUpdateReportMutation();
      const [deleteReport] = useDeleteReportMutation();
 
-     const partnersReportFromData = React.useMemo(() => {
-          return Object.values(
-               [...products, ...sales.map((sale) => sale.productId)].reduce((acc, product) => {
-                    const { name_partner, partner_number } = product;
-                    if (partner_number && !acc[partner_number]) {
-                         acc[partner_number] = {
-                              partner_name: name_partner || "Noma'lum",
-                              partner_number,
-                         };
-                    }
-                    return acc;
-               }, {})
-          ).filter((partner) => partner.partner_number && partner.partner_name);
-     }, [products, sales]);
+     // Формируем список партнеров как в Partner
+     const allProducts = React.useMemo(() => [
+          ...products.map((product) => ({
+               ...product,
+               source: 'product',
+               partner_name: product.name_partner || '',
+               partner_number: product.partner_number || '',
+          })),
+          ...partnerProducts.map((product) => ({
+               ...product,
+               source: 'partner',
+               partner_name: product.name_partner || '',
+               partner_number: product.partner_number || '',
+          })),
+          // Добавляем партнеров из partnersFromApi для полноты
+          ...partnersFromApi.map((partner) => ({
+               source: 'api',
+               partner_name: partner.partner_name || '',
+               partner_number: partner.partner_number || '',
+          })),
+     ], [products, partnerProducts, partnersFromApi]);
 
-     const partnersReport = React.useMemo(() => {
-          const combined = [...partnersReportFromData, ...partnersFromApi];
-          return Object.values(
-               combined.reduce((acc, partner) => {
-                    acc[partner.partner_number] = partner;
-                    return acc;
-               }, {})
+     const uniquePartners = React.useMemo(() => {
+          const partnerMap = new Map(
+               allProducts
+                    .filter((p) => p.partner_name && p.partner_number)
+                    .map((p) => [p.partner_number, { partner_name: p.partner_name, partner_number: p.partner_number }])
           );
-     }, [partnersReportFromData, partnersFromApi]);
+          return Array.from(partnerMap.values()).sort((a, b) => a.partner_name.localeCompare(b.partner_name));
+     }, [allProducts]);
 
      useEffect(() => {
           if (isError) {
@@ -98,21 +109,25 @@ export default function ReportAdd() {
           }
      }, [isError, error]);
 
+     useEffect(() => {
+          console.log("Unique Partners:", uniquePartners); // Отладка: проверяем список партнеров
+     }, [uniquePartners]);
+
      const handlePartnerSelect = (value) => {
-          const partner = partnersReport.find((p) => p.partner_number === value);
-          setSelectedPartner(partner);
+          const partner = uniquePartners.find((p) => p.partner_number === value);
+          setSelectedPartner(partner || null);
           setSelectedClient(null);
      };
 
      const handleClientSelect = (value) => {
           const client = clients.find((c) => c._id === value);
-          setSelectedClient(client);
+          setSelectedClient(client || null);
           setSelectedPartner(null);
      };
 
      const handleAddData = () => {
           if (!selectedPartner && !selectedClient) {
-               message.warning("Iltimos, avval xamkor yoki xaridorni tanlang!");
+               message.warning("Iltimos, avval yetkazib beruvchi yoki xaridorni tanlang!");
                return;
           }
           form.resetFields();
@@ -148,15 +163,14 @@ export default function ReportAdd() {
      const handleSubmit = async (values) => {
           try {
                const reportData = {
-                    ...(activeTab === "partners" && selectedPartner
-                         ? {
-                              partnerId: selectedPartner.partner_number,
-                              partnerName: selectedPartner.partner_name,
-                         }
-                         : {
-                              clientId: selectedClient._id,
-                              clientName: selectedClient.name,
-                         }),
+                    ...(selectedPartner && {
+                         partnerId: selectedPartner.partner_number,
+                         partnerName: selectedPartner.partner_name,
+                    }),
+                    ...(selectedClient && {
+                         clientId: selectedClient._id,
+                         clientName: selectedClient.name,
+                    }),
                     type: values.type,
                     amount: values.amount,
                     currency: values.currency,
@@ -191,7 +205,7 @@ export default function ReportAdd() {
                partner_number: values.partner_number,
           };
 
-          if (partnersReport.some((partner) => partner.partner_number === newPartner.partner_number)) {
+          if (uniquePartners.some((partner) => partner.partner_number === newPartner.partner_number)) {
                message.error("Bu kontragent raqami allaqachon mavjud!");
                return;
           }
@@ -203,6 +217,33 @@ export default function ReportAdd() {
                partnerForm.resetFields();
           } catch (err) {
                message.error(err?.data?.message || "Kontragent qo‘shishda xatolik!");
+          }
+     };
+
+     const handleAddClient = () => {
+          clientForm.resetFields();
+          setIsAddClientModalOpen(true);
+     };
+
+     const handleAddClientSubmit = async (values) => {
+          const newClient = {
+               name: values.name,
+               phone: values.phone,
+               address: values.address || "",
+          };
+
+          if (clients.some((client) => client.phone === newClient.phone)) {
+               message.error("Bu telefon raqami allaqachon mavjud!");
+               return;
+          }
+
+          try {
+               await createClient(newClient).unwrap();
+               message.success("Yangi xaridor qo‘shildi!");
+               setIsAddClientModalOpen(false);
+               clientForm.resetFields();
+          } catch (err) {
+               message.error(err?.data?.message || "Xaridor qo‘shishda xatolik!");
           }
      };
 
@@ -360,10 +401,20 @@ export default function ReportAdd() {
                          <Button
                               type="primary"
                               icon={<PlusOutlined />}
-                              style={{  marginTop: "7px" }}
+                              style={{ marginTop: "7px", marginLeft: "16px" }}
                               onClick={handleAddPartner}
                          >
                               Yangi yetkazib beruvchi
+                         </Button>
+                    )}
+                    {activeTab === "clients" && (
+                         <Button
+                              type="primary"
+                              icon={<PlusOutlined />}
+                              style={{ marginTop: "7px", marginLeft: "16px" }}
+                              onClick={handleAddClient}
+                         >
+                              Yangi xaridor
                          </Button>
                     )}
                </Title>
@@ -392,8 +443,15 @@ export default function ReportAdd() {
                                         (option.children?.toString() || "").toLowerCase().includes(input.toLowerCase())
                                    }
                                    loading={partnersLoading}
+                                   notFoundContent={
+                                        partnersLoading
+                                             ? "Yuklanmoqda..."
+                                             : uniquePartners.length === 0
+                                                  ? "Yetkazib beruvchilar topilmadi"
+                                                  : "Yetkazib beruvchilar topilmadi"
+                                   }
                               >
-                                   {partnersReport.map((partner) => (
+                                   {uniquePartners.map((partner) => (
                                         <Option key={partner.partner_number} value={partner.partner_number}>
                                              {partner.partner_name} ({partner.partner_number})
                                         </Option>
@@ -425,6 +483,7 @@ export default function ReportAdd() {
                                         (option.children?.toString() || "").toLowerCase().includes(input.toLowerCase())
                                    }
                                    loading={clientsLoading}
+                                   notFoundContent={clientsLoading ? "Yuklanmoqda..." : "Xaridorlar topilmadi"}
                               >
                                    {clients.map((client) => (
                                         <Option key={client._id} value={client._id}>
@@ -582,6 +641,55 @@ export default function ReportAdd() {
                                         onClick={() => {
                                              setIsAddPartnerModalOpen(false);
                                              partnerForm.resetFields();
+                                        }}
+                                   >
+                                        Bekor qilish
+                                   </Button>
+                                   <Button type="primary" htmlType="submit">
+                                        Saqlash
+                                   </Button>
+                              </div>
+                         </Form.Item>
+                    </Form>
+               </Modal>
+
+               <Modal
+                    title="Yangi xaridor qo'shish"
+                    open={isAddClientModalOpen}
+                    onCancel={() => {
+                         setIsAddClientModalOpen(false);
+                         clientForm.resetFields();
+                    }}
+                    footer={null}
+                    destroyOnClose
+               >
+                    <Form form={clientForm} onFinish={handleAddClientSubmit} layout="vertical">
+                         <Form.Item
+                              name="name"
+                              label="Xaridor ismi"
+                              rules={[{ required: true, message: "Xaridor ismini kiriting" }]}
+                         >
+                              <Input placeholder="Masalan: Ali" />
+                         </Form.Item>
+                         <Form.Item
+                              name="phone"
+                              label="Telefon raqami"
+                              rules={[
+                                   { required: true, message: "Telefon raqamini kiriting" },
+                                   { pattern: /^\+?\d+$/, message: "Faqat raqamlar kiritilishi kerak" },
+                              ]}
+                         >
+                              <Input placeholder="Masalan: +998901234567" />
+                         </Form.Item>
+                         <Form.Item name="address" label="Manzil">
+                              <Input placeholder="Masalan: Toshkent shahar" />
+                         </Form.Item>
+                         <Form.Item>
+                              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                                   <Button
+                                        onClick={() => {
+                                             setIsAddClientModalOpen(false);
+                                             clientForm.resetFields();
                                         }}
                                    >
                                         Bekor qilish

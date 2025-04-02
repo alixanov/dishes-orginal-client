@@ -28,7 +28,7 @@ const Kassa = () => {
   const { data: products = [] } = useGetProductsQuery();
   const { data: partnerProducts = [] } = useGetProductsPartnerQuery();
   const { data: promos = [] } = useGetPromosQuery();
-  const { data: usdRate = {} } = useGetUsdRateQuery(); // Предполагаем, что usdRate = { rate: 13000 }
+  const { data: usdRate = {} } = useGetUsdRateQuery();
   const { data: clients = [] } = useGetClientsQuery();
   const { data: expenses = [] } = useGetExpensesQuery();
   const [createClient] = useCreateClientMutation();
@@ -38,11 +38,12 @@ const Kassa = () => {
   const [categories, setCategories] = useState([]);
   const [form] = Form.useForm();
   const [categoryForm] = Form.useForm();
-  const [sellForm] = Form.useForm(); // Форма для модального окна продажи
+  const [sellForm] = Form.useForm();
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [xarajatModal, setXarajatModal] = useState(false);
   const navigate = useNavigate();
-  const [selectedClient, setSelectedClient] = useState("");
+  const [selectedBuyer, setSelectedBuyer] = useState(""); // Заменили selectedClient на selectedBuyer
+  const [buyerType, setBuyerType] = useState(null); // "client" или "partner"
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [codeSearchText, setCodeSearchText] = useState("");
@@ -53,7 +54,7 @@ const Kassa = () => {
   const [dueDate, setDueDate] = useState(null);
   const [currency, setCurrency] = useState("SUM");
   const [selectedUnit, setSelectedUnit] = useState("quantity");
-  const userLogin = localStorage.getItem("user_login") || "Noma'lum foydalanuvchi"; // Улучшенная обработка по умолчанию
+  const userLogin = localStorage.getItem("user_login") || "Noma'lum foydalanuvchi";
 
   // Объединяем продукты из Product и Partner
   const allProducts = [
@@ -63,6 +64,7 @@ const Kassa = () => {
       name: product.name || "Noma'lum",
       barcode: product.barcode || "",
       code: product.code || "",
+      partnerName: product.name_partner || "Noma'lum", // Добавляем имя партнера
     })),
     ...partnerProducts.map((product) => ({
       ...product,
@@ -70,8 +72,18 @@ const Kassa = () => {
       name: product.name || "Noma'lum",
       barcode: product.barcode || "",
       code: product.code || "",
+      partnerName: product.name_partner || "Noma'lum", // Добавляем имя партнера
     })),
   ];
+
+  // Получаем уникальных партнеров
+  const uniquePartners = Array.from(
+    new Map(
+      allProducts
+        .filter((p) => p.partnerName && p.partner_number)
+        .map((p) => [p.partner_number, { name: p.partnerName, id: p.partner_number }])
+    ).values()
+  );
 
   useEffect(() => {
     const uniqueCategories = [...new Set(expenses.map((expense) => expense.category))];
@@ -85,13 +97,11 @@ const Kassa = () => {
     const searchLower = searchText.toLowerCase();
 
     if (codeSearchLower) {
-      // Если поле поиска по коду заполнено, фильтруем только по первым трём символам кода
       result = allProducts.filter((product) => {
         const code = (product.code || "").toLowerCase();
         return code.startsWith(codeSearchLower);
       });
     } else if (searchLower) {
-      // Если поле поиска по коду пустое, фильтруем по имени или штрих-коду
       result = allProducts.filter((product) => {
         const name = (product.name || "").toLowerCase();
         const barcode = (product.barcode || "").toLowerCase();
@@ -119,7 +129,6 @@ const Kassa = () => {
     categoryForm.resetFields();
   };
 
-  // Функция для пересчёта цены при смене валюты
   const convertPrice = (price, fromCurrency, toCurrency, rate) => {
     if (fromCurrency === toCurrency) return price;
     if (fromCurrency === "USD" && toCurrency === "SUM") {
@@ -131,12 +140,10 @@ const Kassa = () => {
     return price;
   };
 
-  // Форматирование числа без лишних нулей
   const formatNumber = (num) => {
-    return Number(num).toString(); // Убираем .00, но сохраняем дробную часть, если она есть
+    return Number(num).toString();
   };
 
-  // Генерация PDF чека с помощью html2pdf.js
   const generatePDF = () => {
     const { totalUSD, totalSUM } = basket.reduce(
       (acc, item) => {
@@ -166,13 +173,22 @@ const Kassa = () => {
       { totalUSD: 0, totalSUM: 0 }
     );
 
-    const clientData = sellForm.getFieldsValue();
-    const clientName = selectedClient
-      ? clients.find((c) => c._id === selectedClient)?.name || "Noma'lum"
-      : clientData.clientName || "Noma'lum";
-    const clientAddress = selectedClient
-      ? clients.find((c) => c._id === selectedClient)?.address || "Noma'lum"
-      : clientData.clientAddress || "Noma'lum";
+    const formValues = sellForm.getFieldsValue();
+    let buyerName = "Noma'lum";
+    let buyerAddress = "Noma'lum";
+
+    if (buyerType === "client" && selectedBuyer) {
+      const client = clients.find((c) => c._id === selectedBuyer);
+      buyerName = client?.name || formValues.clientName || "Noma'lum";
+      buyerAddress = client?.address || formValues.clientAddress || "Noma'lum";
+    } else if (buyerType === "partner" && selectedBuyer) {
+      const partner = uniquePartners.find((p) => p.id === selectedBuyer);
+      buyerName = partner?.name || "Noma'lum";
+      buyerAddress = "Hamkor manzili yo'q"; // Можно добавить поле для адреса партнера, если оно есть
+    } else {
+      buyerName = formValues.clientName || "Noma'lum";
+      buyerAddress = formValues.clientAddress || "Noma'lum";
+    }
 
     const tableRows = basket
       .map((item, index) => {
@@ -232,11 +248,11 @@ const Kassa = () => {
             <div style="display: flex; flex-direction: column; gap: 10px; width: 50%;">
               <div style="display: flex; flex-direction: column;">
                 <b style="color: #333;">Сотиб олувчи:</b>
-                <p style="margin: 5px 0; color: #555;">${clientName}</p>
+                <p style="margin: 5px 0; color: #555;">${buyerName}</p>
               </div>
               <div style="display: flex; flex-direction: column;">
                 <b style="color: #333;">Манзил:</b>
-                <p style="margin: 5px 0; color: #555;">${clientAddress}</p>
+                <p style="margin: 5px 0; color: #555;">${buyerAddress}</p>
               </div>
             </div>
           </div>
@@ -306,7 +322,7 @@ const Kassa = () => {
         document.body.removeChild(element);
       });
   };
-  // Колонки для таблицы продуктов
+
   const productsColumn = [
     {
       title: "Tovar",
@@ -384,10 +400,10 @@ const Kassa = () => {
                 {
                   ...record,
                   quantity: 1,
-                  currency: currency, // Текущая валюта в момент добавления
+                  currency: currency,
                   originalPrice: {
                     value: price,
-                    currency: productCurrency, // Исходная валюта продукта
+                    currency: productCurrency,
                   },
                   sellingPrice: {
                     value: convertPrice(price, productCurrency, currency, usdRate?.rate),
@@ -460,12 +476,12 @@ const Kassa = () => {
                 if (item._id === record._id) {
                   const newQuantity = item.quantity - 1;
                   if (newQuantity === 0) {
-                    return null; // Если количество становится 0, исключаем элемент
+                    return null;
                   }
                   return { ...item, quantity: newQuantity };
                 }
                 return item;
-              }).filter((item) => item !== null); // Удаляем элементы, где quantity стало 0
+              }).filter((item) => item !== null);
               setBasket(newBasket);
             }}
           >
@@ -588,7 +604,6 @@ const Kassa = () => {
 
   const handleSell = async () => {
     try {
-      // Проверяем, заполнены ли обязательные поля
       await sellForm.validateFields();
 
       const formValues = sellForm.getFieldsValue();
@@ -598,9 +613,14 @@ const Kassa = () => {
         return;
       }
 
-      let clientId = selectedClient;
+      let clientId = null;
+      let partnerId = null;
 
-      if (!selectedClient) {
+      if (buyerType === "client" && selectedBuyer) {
+        clientId = selectedBuyer;
+      } else if (buyerType === "partner" && selectedBuyer) {
+        partnerId = selectedBuyer;
+      } else if (!selectedBuyer) {
         const clientResponse = await createClient({
           name: formValues.clientName,
           phone: formValues.clientPhone,
@@ -621,7 +641,8 @@ const Kassa = () => {
         await Promise.all(
           basket.map((item) =>
             createDebt({
-              clientId,
+              ...(clientId && { clientId }),
+              ...(partnerId && { partnerId }),
               productId: item._id,
               quantity:
                 selectedUnit === "quantity"
@@ -672,7 +693,8 @@ const Kassa = () => {
         await Promise.all(
           basket.map((item) =>
             sellProduct({
-              clientId,
+              ...(clientId && { clientId }),
+              ...(partnerId && { partnerId }),
               productId: item._id,
               unit: selectedUnit,
               currency: item.currency,
@@ -702,14 +724,13 @@ const Kassa = () => {
         );
       }
 
-      // Генерируем PDF после успешной продажи
       generatePDF();
 
-      // Сбрасываем состояние и форму
       setIsModalVisible(false);
       setBasket([]);
       setPaymentMethod("");
-      setSelectedClient("");
+      setSelectedBuyer("");
+      setBuyerType(null);
       setDueDate(null);
       sellForm.resetFields();
       message.success("Sotuv amalga oshirildi");
@@ -730,10 +751,10 @@ const Kassa = () => {
             value={searchText}
             onChange={(e) => {
               setSearchText(e.target.value);
-              if (codeSearchText) setCodeSearchText(""); // Очищаем поле поиска по коду, если начинаем поиск по имени/штрих-коду
+              if (codeSearchText) setCodeSearchText("");
             }}
             style={{ flex: 1, minWidth: "200px" }}
-            disabled={codeSearchText.length > 0} // Отключаем поле, если поиск по коду активен
+            disabled={codeSearchText.length > 0}
           />
           <Input
             type="search"
@@ -741,10 +762,10 @@ const Kassa = () => {
             value={codeSearchText}
             onChange={(e) => {
               setCodeSearchText(e.target.value);
-              if (searchText) setSearchText(""); // Очищаем поле поиска по имени/штрих-коду, если начинаем поиск по коду
+              if (searchText) setSearchText("");
             }}
             style={{ flex: 1, minWidth: "200px" }}
-            disabled={searchText.length > 0} // Отключаем поле, если поиск по имени/штрих-коду активен
+            disabled={searchText.length > 0}
           />
           <Select value={currency} onChange={(value) => setCurrency(value)} style={{ width: "100px" }}>
             <Option value="SUM">SUM</Option>
@@ -935,19 +956,33 @@ const Kassa = () => {
               ))}
             </Select>
           </Form.Item>
-          <Form.Item label="Haridor" name="selectedClient">
+          <Form.Item label="Haridor" name="selectedBuyer">
             <Select
               showSearch
-              value={selectedClient}
-              onChange={(value) => {
-                setSelectedClient(value);
-                const client = clients.find((c) => c._id === value);
-                if (client) {
-                  sellForm.setFieldsValue({
-                    clientName: client.name,
-                    clientPhone: client.phone,
-                    clientAddress: client.address,
-                  });
+              value={selectedBuyer}
+              onChange={(value, option) => {
+                setSelectedBuyer(value);
+                setBuyerType(option.type); // Устанавливаем тип покупателя (client или partner)
+                if (value) {
+                  if (option.type === "client") {
+                    const client = clients.find((c) => c._id === value);
+                    if (client) {
+                      sellForm.setFieldsValue({
+                        clientName: client.name,
+                        clientPhone: client.phone,
+                        clientAddress: client.address,
+                      });
+                    }
+                  } else if (option.type === "partner") {
+                    const partner = uniquePartners.find((p) => p.id === value);
+                    if (partner) {
+                      sellForm.setFieldsValue({
+                        clientName: partner.name,
+                        clientPhone: "",
+                        clientAddress: "Hamkor manzili yo'q",
+                      });
+                    }
+                  }
                 } else {
                   sellForm.setFieldsValue({
                     clientName: "",
@@ -956,7 +991,7 @@ const Kassa = () => {
                   });
                 }
               }}
-              placeholder="Haridorni tanlang"
+              placeholder="Haridor yoki Hamkorni tanlang"
               optionFilterProp="children"
               filterOption={(input, option) =>
                 option.children.toLowerCase().includes(input.toLowerCase())
@@ -964,13 +999,18 @@ const Kassa = () => {
             >
               <Select.Option value="">Yangi haridor</Select.Option>
               {clients.map((client) => (
-                <Select.Option key={client._id} value={client._id}>
-                  {client.name}
+                <Select.Option key={client._id} value={client._id} type="client">
+                  {client.name} (Xaridor)
+                </Select.Option>
+              ))}
+              {uniquePartners.map((partner) => (
+                <Select.Option key={partner.id} value={partner.id} type="partner">
+                  {partner.name} (Hamkor)
                 </Select.Option>
               ))}
             </Select>
           </Form.Item>
-          {selectedClient === "" && (
+          {selectedBuyer === "" && (
             <>
               <Form.Item
                 label="Mijoz ismi"

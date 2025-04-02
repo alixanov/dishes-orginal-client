@@ -12,13 +12,12 @@ import {
 import moment from "moment";
 
 const Client = () => {
-  const { data: clients = [] } = useGetClientsQuery();
+  const { data: clients = [], isLoading: clientsLoading } = useGetClientsQuery();
   const [selectedClient, setSelectedClient] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const { data: clientHistory = [] } = useGetClientHistoryQuery(
-    selectedClient?._id,
-    { skip: !selectedClient }
-  );
+  const { data: clientHistory = [] } = useGetClientHistoryQuery(selectedClient?._id, {
+    skip: !selectedClient,
+  });
   const { data: debts = [] } = useGetDebtsByClientQuery(selectedClient?._id, {
     skip: !selectedClient,
   });
@@ -29,7 +28,7 @@ const Client = () => {
       await payDebt({
         id: debtId,
         amount: amount,
-        currency
+        currency,
       }).unwrap();
       message.success("Qarz muvaffaqiyatli to'landi");
     } catch (error) {
@@ -55,90 +54,88 @@ const Client = () => {
       title: "Amallar",
       render: (_, record) => (
         <Button
+          type="primary"
+          icon={<EyeOutlined />}
           onClick={() => {
             setSelectedClient(record);
             setIsModalVisible(true);
           }}
         >
-          <EyeOutlined /> Ko'rish
+          Ko'rish
         </Button>
       ),
     },
   ];
 
   const combinedData = [
-    ...clientHistory?.map((sale) => ({ ...sale, type: "sale" })) || [],
-    ...debts?.map((debt) => ({ ...debt, type: "debt" })) || [],
+    ...(clientHistory?.map((sale) => ({ ...sale, type: "sale" })) || []),
+    ...(debts?.map((debt) => ({ ...debt, type: "debt" })) || []),
   ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
 
   const historyAndDebtColumns = [
     { title: "Tovar nomi", dataIndex: ["productId", "name"], key: "productId.name" },
     { title: "Soni", dataIndex: "quantity", key: "quantity" },
+    { title: "Sotish narxi", dataIndex: "sellingPrice", key: "sellingPrice" },
+    { title: "Valyuta", dataIndex: "currency", key: "currency" },
+    { title: "Chegirma(%)", dataIndex: "discount", key: "discount" },
     {
-      title: "Sotish narxi", dataIndex: "sellingPrice", key: "sellingPrice"
+      title: "Umumiy summa",
+      key: "total",
+      render: (_, record) =>
+        record.sellingPrice && record.quantity ? (record.sellingPrice * record.quantity).toLocaleString() : "-",
     },
-    {
-      title: "Valyuta", dataIndex: "currency", key: "currency"
-    },
-    {
-      title: "Chegirma(%)", dataIndex: "discount", key: "discount"
-    },
-    {
-      title: "Umumiy summa", key: "total", render: (_, record) => {
-        return record.sellingPrice * record.quantity
-      }
-    },
-    {
-      title: "Qoldiq qarz", dataIndex: "remainingAmount", key: "amount"
-    },
+    { title: "Qoldiq qarz", dataIndex: "remainingAmount", key: "amount" },
     {
       title: "Holati",
       dataIndex: "type",
       key: "type",
-      render: (_, record) => (record.type === "debt" ? (record.status === "paid" ? "To'langan" : "To'lanmagan") : "Sotilgan"),
+      render: (_, record) =>
+        record.type === "debt" ? (record.status === "paid" ? "To'langan" : "To'lanmagan") : "Sotilgan",
     },
-    { title: "Sana", dataIndex: "createdAt", key: "createdAt", render: (text) => moment(text).format("DD.MM.YYYY") },
+    {
+      title: "Sana",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (text) => (text ? moment(text).format("DD.MM.YYYY") : "-"),
+    },
     {
       title: "Amallar",
-      render: (_, record) => (
+      render: (_, record) =>
         record.type === "debt" && (
           <div className="table_actions">
-            {
-              record.status === "pending" && (
-                <Tooltip
-                  title={
-                    <form onSubmit={(e) => {
+            {record.status === "pending" && (
+              <Tooltip
+                title={
+                  <form
+                    onSubmit={(e) => {
                       e.preventDefault();
                       const amount = Number(e.target[0].value);
                       const currency = e.target[1].value;
-
                       handlePayDebt(record._id, amount, currency);
-                    }} className="modal_form">
-                      <input
-                        type="number"
-                        step={0.001}
-                        required
-                        placeholder="To‘lov summasi"
-                      />
-                      <select required>
-                        <option value="" disabled selected>Valyutani tanlang</option>
-                        <option value="USD">USD</option>
-                        <option value="SUM">SUM</option>
-                      </select>
-                      <button type="submit">
-                        Tasdiqlash
-                      </button>
-                    </form>
-                  }
-                  trigger="click"
-                >
-                  <Button type="primary">
-                    To'lash
-                  </Button>
-                </Tooltip>
-              )
-            }
+                    }}
+                    className="modal_form"
+                  >
+                    <input
+                      type="number"
+                      step={0.001}
+                      required
+                      placeholder="To‘lov summasi"
+                    />
+                    <select required>
+                      <option value="" disabled selected>
+                        Valyutani tanlang
+                      </option>
+                      <option value="USD">USD</option>
+                      <option value="SUM">SUM</option>
+                    </select>
+                    <button type="submit">Tasdiqlash</button>
+                  </form>
+                }
+                trigger="click"
+              >
+                <Button type="primary">To'lash</Button>
+              </Tooltip>
+            )}
             <Popover
               content={
                 <div>
@@ -154,18 +151,24 @@ const Client = () => {
               <Button style={{ marginLeft: 8 }}>To'lov tarixi</Button>
             </Popover>
           </div>
-        )
-      )
-    }
-  ]
+        ),
+    },
+  ];
 
   return (
-    <div>
-      <h1>Clientlar</h1>
-      <Table columns={clientColumns} dataSource={clients} rowKey="_id" />
+    <div style={{ padding: "24px", background: "#f0f2f5" }}>
+      <h1 style={{ color: "#001529", marginBottom: "24px" }}>Xaridorlar</h1>
+      <Table
+        columns={clientColumns}
+        dataSource={clients}
+        rowKey="_id"
+        loading={clientsLoading}
+        pagination={{ pageSize: 10 }}
+        locale={{ emptyText: "Xaridorlar mavjud emas" }}
+      />
       <Modal
-        title="Client tarixi va qarzlari"
-        visible={isModalVisible}
+        title={`${selectedClient?.name} tarixi va qarzlari`}
+        open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         footer={null}
         width={1440}
@@ -174,6 +177,7 @@ const Client = () => {
           columns={historyAndDebtColumns}
           dataSource={combinedData}
           rowKey="_id"
+          pagination={{ pageSize: 5 }}
         />
       </Modal>
     </div>

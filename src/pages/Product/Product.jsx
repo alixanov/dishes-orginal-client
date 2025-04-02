@@ -132,14 +132,20 @@ const Product = () => {
         values.barcode = newBarcode;
         values.isPackage = isPackage;
       }
-      values.image_url = imageUrl;
+      values.image_url = imageUrl || "";
 
-      const total_kg = Number(values.total_kg)?.toFixed(2);
-      values.kg_per_box = (total_kg / Number(values.box_quantity))?.toFixed(2);
-      values.kg_per_package = isPackage
-        ? (total_kg / Number(values.package_quantity))?.toFixed(2)
-        : null;
-      values.kg_per_quantity = (total_kg / Number(values.quantity))?.toFixed(2);
+      if (values.total_kg) {
+        const total_kg = Number(values.total_kg)?.toFixed(2);
+        values.kg_per_box = values.box_quantity
+          ? (total_kg / Number(values.box_quantity))?.toFixed(2)
+          : null;
+        values.kg_per_package = isPackage && values.package_quantity
+          ? (total_kg / Number(values.package_quantity))?.toFixed(2)
+          : null;
+        values.kg_per_quantity = values.quantity
+          ? (total_kg / Number(values.quantity))?.toFixed(2)
+          : null;
+      }
 
       if (editingProduct) {
         if (editingSource === "product") {
@@ -345,7 +351,7 @@ const Product = () => {
             okText="Ha"
             cancelText="Yo'q"
           >
-            <Button type="link" size="small" danger style={{color:"red"}} > 
+            <Button type="link" size="small" danger style={{ color: "red" }}>
               <MdDeleteForever />
             </Button>
           </Popconfirm>
@@ -465,18 +471,10 @@ const Product = () => {
           <Form.Item name="partner_number" label="Xamkor raqami">
             <Input placeholder="Xamkor raqami" />
           </Form.Item>
-          <Form.Item
-            label="O'lcham"
-            name="size"
-            rules={[{ required: true, message: "O'lchamni kiriting" }]}
-          >
+          <Form.Item name="size" label="O'lcham">
             <Input placeholder="O'lcham" type="text" />
           </Form.Item>
-          <Form.Item
-            name="code"
-            label="Kod"
-            rules={[{ required: true, message: "Kod kiriting" }]}
-          >
+          <Form.Item name="code" label="Kod">
             <Input placeholder="Kod" type="text" />
           </Form.Item>
           <Form.Item label="Tan narxi" name={["purchasePrice", "value"]}>
@@ -535,7 +533,7 @@ const Product = () => {
           <Form.Item
             label="Ombor"
             name="warehouse"
-            rules={[{ required: true, message: "Ombor tanlang!" }]}
+          // Removed required rule to make this field optional
           >
             <Select placeholder="Ombor tanlash" loading={warehousesLoading}>
               {warehouses.map((warehouse) => (
@@ -548,7 +546,7 @@ const Product = () => {
           <Form.Item
             label="Kategoriya"
             name="category"
-            rules={[{ required: true, message: "Kategoriyani kiriting!" }]}
+          // Removed required rule to make this field optional
           >
             <Input placeholder="Kategoriya" />
           </Form.Item>
@@ -576,7 +574,7 @@ const Product = () => {
               {editingProduct ? "Tahrirlash" : "Qo'shish"}
             </Button>
           </Form.Item>
-        </Form>``
+        </Form>
       </Modal>
 
       <Modal

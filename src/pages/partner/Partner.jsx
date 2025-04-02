@@ -12,10 +12,9 @@ const Partner = () => {
      const { data: hamkorMahsulotlari = [] } = useGetProductsPartnerQuery();
      const [tanlanganHamkor, setTanlanganHamkor] = useState(null);
      const [modalKoʻrinadi, setModalKoʻrinadi] = useState(false);
-     const [searchName, setSearchName] = useState(""); // Поле для поиска по имени
-     const [searchNumber, setSearchNumber] = useState(""); // Поле для поиска по номеру
+     const [searchName, setSearchName] = useState("");
+     const [searchNumber, setSearchNumber] = useState("");
 
-     // Mahsulotlarni birlashtiramiz
      const barchaMahsulotlar = [
           ...mahsulotlar.map((mahsulot) => ({
                ...mahsulot,
@@ -31,7 +30,6 @@ const Partner = () => {
           })),
      ];
 
-     // Unikal hamkorlarni olamiz va filtrlaymiz
      const unikalHamkorlar = Array.from(
           new Map(
                barchaMahsulotlar
@@ -39,21 +37,15 @@ const Partner = () => {
                     .map((p) => [p.hamkor_nomi, { nom: p.hamkor_nomi, raqam: p.hamkor_raqami }])
           ).values()
      ).filter((hamkor) => {
-          const matchesName = hamkor.nom
-               .toLowerCase()
-               .includes(searchName.toLowerCase());
-          const matchesNumber = hamkor.raqam
-               .toLowerCase()
-               .includes(searchNumber.toLowerCase());
+          const matchesName = hamkor.nom.toLowerCase().includes(searchName.toLowerCase());
+          const matchesNumber = hamkor.raqam.toLowerCase().includes(searchNumber.toLowerCase());
           return matchesName && matchesNumber;
      });
 
-     // Tanlangan hamkor bo'yicha mahsulotlarni filtrlaymiz
      const filtrlanganMahsulotlar = tanlanganHamkor
           ? barchaMahsulotlar.filter((p) => p.hamkor_nomi === tanlanganHamkor.nom)
           : [];
 
-     // Jadval uchun ustunlarni aniqlaymiz
      const ustunlar = [
           {
                title: 'Mahsulot',
@@ -130,8 +122,6 @@ const Partner = () => {
                <Title level={2} style={{ color: '#001529', marginBottom: '24px' }}>
                     Yetkazib beruvchilar
                </Title>
-
-               {/* Поля для поиска */}
                <Space style={{ marginBottom: '24px' }}>
                     <Input
                          style={{ width: '300px' }}
@@ -146,7 +136,6 @@ const Partner = () => {
                          onChange={(e) => setSearchNumber(e.target.value)}
                     />
                </Space>
-
                <Row gutter={[16, 16]}>
                     {unikalHamkorlar.map((hamkor, indeks) => (
                          <Col xs={24} sm={12} md={8} lg={6} key={indeks}>
@@ -166,7 +155,6 @@ const Partner = () => {
                          </Col>
                     ))}
                </Row>
-
                <Modal
                     title={
                          <Space>
