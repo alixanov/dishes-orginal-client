@@ -962,7 +962,7 @@ const Kassa = () => {
               value={selectedBuyer}
               onChange={(value, option) => {
                 setSelectedBuyer(value);
-                setBuyerType(option.type); // Устанавливаем тип покупателя (client или partner)
+                setBuyerType(option.type);
                 if (value) {
                   if (option.type === "client") {
                     const client = clients.find((c) => c._id === value);
@@ -992,24 +992,37 @@ const Kassa = () => {
                 }
               }}
               placeholder="Haridor yoki Hamkorni tanlang"
-              optionFilterProp="children"
+              optionFilterProp="label" // Используем label для фильтрации
               filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
+                (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
               }
             >
-              <Select.Option value="">Yangi haridor</Select.Option>
+              <Select.Option value="" label="Yangi haridor">
+                Yangi haridor
+              </Select.Option>
               {clients.map((client) => (
-                <Select.Option key={client._id} value={client._id} type="client">
+                <Select.Option
+                  key={client._id}
+                  value={client._id}
+                  type="client"
+                  label={client.name} // Явно задаём label для фильтрации
+                >
                   {client.name} (Xaridor)
                 </Select.Option>
               ))}
               {uniquePartners.map((partner) => (
-                <Select.Option key={partner.id} value={partner.id} type="partner">
+                <Select.Option
+                  key={partner.id}
+                  value={partner.id}
+                  type="partner"
+                  label={partner.name} // Явно задаём label для фильтрации
+                >
                   {partner.name} (Hamkor)
                 </Select.Option>
               ))}
             </Select>
           </Form.Item>
+
           {selectedBuyer === "" && (
             <>
               <Form.Item
