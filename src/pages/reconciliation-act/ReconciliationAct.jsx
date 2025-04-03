@@ -225,7 +225,7 @@ export default function ReconciliationAct() {
         const content = `
       <div style="width:210mm; height:297mm; padding:20px; font-family:Arial, sans-serif; color:#001529;">
         <h2 style="text-align:center; margin-bottom:20px;">
-          ${moment().format("DD.MM.YYYY")} даги Хисобварак-фактура
+          ${moment().format("DD.MM.YYYY")} даги Солиштирма далолатномаси
         </h2>
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
           <div>

@@ -19,9 +19,6 @@ const Sales = () => {
   });
   const [filteredSales, setFilteredSales] = useState([]);
 
-  // Получаем имя пользователя (поставщика) из localStorage
-  const supplierName = localStorage.getItem("user_login") || "Noma'lum";
-
   useEffect(() => {
     setFilteredSales(
       sales.filter((sale) => {
@@ -47,11 +44,9 @@ const Sales = () => {
     );
   }, [filters, sales]);
 
-  // Функция для генерации PDF для одной продажи
   const generatePDF = (sale) => {
     const printWindow = window.open("", "", "width=600,height=600");
 
-    // Проверяем, удалось ли открыть окно
     if (!printWindow) {
       alert("Iltimos, brauzeringizda pop-up oynalarni ruxsat bering!");
       return;
@@ -59,12 +54,14 @@ const Sales = () => {
 
     const totalPrice = (sale.sellingPrice || 0) * (sale.quantity || 0);
     const paymentMethodText = sale.paymentMethod === "cash" ? "Naqd" : sale.paymentMethod === "card" ? "Karta" : "Noma'lum";
-    const clientName = sale.clientId?.name || "Noma'lum";
+
+    // Determine buyer name - show client name if exists, otherwise show partner name
+    const buyerName = sale.clientId?.name || sale.partnerName || "Noma'lum";
 
     const tableRow = `
       <tr>
         <td>1</td>
-        <td>${sale.productId?.name || "Noma'lum"}</td>
+        <td>${sale.productId?.name || "Noma'lum mahsulot"}</td>
         <td>${sale.quantity || 0}</td>
         <td>${sale.sellingPrice || 0}</td>
         <td>${totalPrice.toLocaleString()}</td>
@@ -81,11 +78,11 @@ const Sales = () => {
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
           <div>
             <b>Етказиб берувчи:</b><br/>
-            <p>${supplierName}</p>
+            <p>${localStorage.getItem("user_login") || "Noma'lum"}</p>
           </div>
           <div>
             <b>Сотиб олувчи:</b><br/>
-            <p>${clientName}</p>
+            <p>${buyerName}</p>
           </div>
         </div>
         <table border="1" style="border-collapse:collapse; width:100%; text-align:center;">
@@ -107,7 +104,7 @@ const Sales = () => {
 
     printWindow.document.write(`
       <html>
-        <head><title>Хисобварак-фактура - ${clientName}</title></head>
+        <head><title>Хисобварак-фактура - ${buyerName}</title></head>
         <body>${content}</body>
       </html>
     `);
@@ -117,13 +114,24 @@ const Sales = () => {
   };
 
   const columns = [
-    { title: "Mijoz ismi", dataIndex: ["clientId", "name"], key: "clientId" },
+    {
+      title: "Haridor",
+      key: "buyer",
+      render: (_, record) => (
+        record.clientId?.name || record.partnerName || "Noma'lum"
+      )
+    },
     { title: "Mahsulot nomi", dataIndex: ["productId", "name"], key: "productId" },
     { title: "Mahsulot kodi", dataIndex: ["productId", "code"], key: "productId" },
     { title: "Mahsulot o'lchami", dataIndex: ["productId", "size"], key: "productId" },
     { title: "Ombor", dataIndex: ["warehouseId", "name"], key: "warehouseId" },
     { title: "Soni", dataIndex: "quantity", key: "quantity" },
-    { title: "To'lov usuli", dataIndex: "paymentMethod", key: "paymentMethod" },
+    {
+      title: "To'lov usuli",
+      dataIndex: "paymentMethod",
+      key: "paymentMethod",
+      render: (text) => text === "cash" ? "Naqd" : text === "card" ? "Karta" : "Qarz"
+    },
     {
       title: "Sotib olish narxi",
       key: "purchasePrice",
