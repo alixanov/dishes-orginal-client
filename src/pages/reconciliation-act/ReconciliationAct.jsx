@@ -222,6 +222,21 @@ export default function ReconciliationAct() {
         `;
             })
             .join("");
+        const saleTableRows = partnerSales
+            .map((item, index) => {
+                return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${item.productId.name}</td>
+            <td>${item.quantity}</td>
+            <td>${item.sellingPrice}</td>
+            <td>${item.productId.currency}</td>
+            <td>${item.sellingPrice * item.quantity}</td>
+            <td>${moment(item.createdAt).format("DD.MM.YYYY")}</td>
+          </tr>
+        `;
+            })
+            .join("");
 
         const content = `
       <div style="width:210mm; height:297mm; padding:20px; font-family:Arial, sans-serif; color:#001529;">
@@ -253,6 +268,24 @@ export default function ReconciliationAct() {
           </thead>
           <tbody>${tableRows}</tbody>
         </table>
+        ${selectedPartner ? `
+            <p>Сотилган товарлар</p>
+            <table border="1" style="border-collapse:collapse; width:100%; text-align:center;">
+                <thead style="background:#001529; color:white;">
+                    <tr>
+                        <th>No</th>
+                        <th>Махсулот номи</th>
+                        <th>Миқдор</th>
+                        <th>Нарх</th>
+                        <th>Валюта</th>
+                        <th>Умумий сумма</th>
+                        <th>Сана</th>
+                    </tr>
+                </thead>
+                <tbody>${saleTableRows}</tbody>
+            </table>
+        ` : ''}
+        
       </div>
     `;
 
