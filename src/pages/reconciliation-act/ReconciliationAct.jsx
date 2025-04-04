@@ -35,13 +35,13 @@ export default function ReconciliationAct() {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [selectedClient, setSelectedClient] = useState(null);
+    const [partnerSales, setPartnerSales] = useState([])
     const [selectedPartner, setSelectedPartner] = useState(null);
     const [showPartnerSelect, setShowPartnerSelect] = useState(false);
     const [showClientSelect, setShowClientSelect] = useState(false);
     const [filteredPartnerProducts, setFilteredPartnerProducts] = useState([]);
     const [filteredClientData, setFilteredClientData] = useState([]);
 
-    // Получаем имя пользователя (поставщика) из localStorage
     const supplierName = localStorage.getItem("user_login") || "BANKERSUZ GROUP MCHJ";
 
     const { data: clientHistory = [] } = useGetClientHistoryQuery(selectedClient?._id, {
@@ -117,6 +117,7 @@ export default function ReconciliationAct() {
             return acc;
         }, {})
     );
+
 
     useEffect(() => {
         if (!selectedPartner) {
@@ -530,11 +531,25 @@ export default function ReconciliationAct() {
                         style={{ width: 300 }}
                         placeholder="Xamkor tanlang"
                         onChange={(value) => {
-                            setSelectedPartner(partnersReport.find((p) => p.partner_number === value));
-                            setSelectedClient(null);
+                            const selected = partnersReport.find((p) => p.partner_number === value);
+                            setSelectedPartner(selected);
                             setStartDate(null);
                             setEndDate(null);
+
+                            if (!selected) {
+                                setPartnerSales([]);
+                                return;
+                            }
+
+                            const filteredSales = sales.filter((sale) =>
+                                sale.partnerId === selected.partner_number &&
+                                (!startDate || new Date(sale.createdAt) >= new Date(startDate)) &&
+                                (!endDate || new Date(sale.createdAt) <= new Date(endDate))
+                            );
+
+                            setPartnerSales(filteredSales);
                         }}
+
                         value={selectedPartner?.partner_number || null}
                     >
                         {partnersReport.map((partner) => (
@@ -574,13 +589,42 @@ export default function ReconciliationAct() {
                         <Text strong>Boshlanish sanasi:</Text>
                         <DatePicker
                             value={startDate ? moment(startDate) : null}
-                            onChange={(date) => setStartDate(date ? date.toDate() : null)}
+                            onChange={(date) => {
+                                setStartDate(date ? date.toDate() : null)
+                                if (!selectedPartner) {
+                                    setPartnerSales([]);
+                                    return;
+                                }
+
+                                const filteredSales = sales.filter((sale) =>
+                                    sale.partnerId === selectedPartner.partner_number &&
+                                    (!startDate || new Date(sale.createdAt) >= new Date(startDate)) &&
+                                    (!endDate || new Date(sale.createdAt) <= new Date(endDate))
+                                );
+
+                                setPartnerSales(filteredSales);
+                            }}
                             format="DD-MM-YYYY"
                         />
                         <Text strong>Tugash sanasi:</Text>
                         <DatePicker
                             value={endDate ? moment(endDate) : null}
-                            onChange={(date) => setEndDate(date ? date.toDate() : null)}
+                            onChange={(date) => {
+                                setEndDate(date ? date.toDate() : null)
+
+                                if (!selectedPartner) {
+                                    setPartnerSales([]);
+                                    return;
+                                }
+
+                                const filteredSales = sales.filter((sale) =>
+                                    sale.partnerId === selectedPartner.partner_number &&
+                                    (!startDate || new Date(sale.createdAt) >= new Date(startDate)) &&
+                                    (!endDate || new Date(sale.createdAt) <= new Date(endDate))
+                                );
+
+                                setPartnerSales(filteredSales);
+                            }}
                             format="DD-MM-YYYY"
                         />
                     </Space>

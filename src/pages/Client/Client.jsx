@@ -197,9 +197,6 @@ const Sales = () => {
     return <div>Yuklanmoqda...</div>;
   }
 
-  // Для отладки: выведем данные в консоль
-  console.log("Sales data:", sales);
-  console.log("Unique partners:", uniquePartners);
 
   return (
     <div className="sales-page">

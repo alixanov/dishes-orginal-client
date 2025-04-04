@@ -4,11 +4,40 @@ import { DatePicker, Input, Select, Table, Button, Space } from "antd";
 import { PrinterOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { useGetClientsQuery } from "../../context/service/client.service";
+import { useGetProductsQuery } from "../../context/service/product.service";
+import { useGetProductsPartnerQuery } from "../../context/service/partner.service";
 
 const { Option } = Select;
 
 const Sales = () => {
   const { data: clients = [] } = useGetClientsQuery();
+  const { data: mahsulotlar = [] } = useGetProductsQuery();
+  const { data: hamkorMahsulotlari = [] } = useGetProductsPartnerQuery();
+
+  const [searchName, setSearchName] = useState("");
+  const [searchNumber, setSearchNumber] = useState("");
+  const barchaMahsulotlar = [
+    ...mahsulotlar.map((mahsulot) => ({
+      ...mahsulot,
+      manba: 'mahsulot',
+      hamkor_nomi: mahsulot.name_partner || '',
+      hamkor_raqami: mahsulot.partner_number || '',
+    })),
+    ...hamkorMahsulotlari.map((mahsulot) => ({
+      ...mahsulot,
+      manba: 'hamkor',
+      hamkor_nomi: mahsulot.name_partner || '',
+      hamkor_raqami: mahsulot.partner_number || '',
+    })),
+  ];
+  const unikalHamkorlar = Array.from(
+    new Map(
+      barchaMahsulotlar
+        .filter((p) => p.hamkor_nomi && p.hamkor_raqami)
+        .map((p) => [p.hamkor_nomi, { nom: p.hamkor_nomi, raqam: p.hamkor_raqami }])
+    ).values()
+  )
+
   const { data: sales = [], isLoading } = useGetSalesHistoryQuery();
   const [filters, setFilters] = useState({
     productName: "",
@@ -118,7 +147,7 @@ const Sales = () => {
       title: "Haridor",
       key: "buyer",
       render: (_, record) => (
-        record.clientId?.name || record.partnerName || "Noma'lum"
+        record.clientId?.name || unikalHamkorlar.find(h => h.raqam === record.partnerId).nom || "Noma'lum"
       )
     },
     { title: "Mahsulot nomi", dataIndex: ["productId", "name"], key: "productId" },

@@ -109,9 +109,6 @@ export default function ReportAdd() {
           }
      }, [isError, error]);
 
-     useEffect(() => {
-          console.log("Unique Partners:", uniquePartners); // Отладка: проверяем список партнеров
-     }, [uniquePartners]);
 
      const handlePartnerSelect = (value) => {
           const partner = uniquePartners.find((p) => p.partner_number === value);
