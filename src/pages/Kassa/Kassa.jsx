@@ -24,45 +24,24 @@ import zolotayaroza77 from "../../assets/zolotayaroza77.svg";
 
 const { Option } = Select;
 
-const ProductsHeader = ({ searchText, setSearchText, codeSearchText, setCodeSearchText, currency, setCurrency, navigate, setXarajatModal }) => (
+const ProductsHeader = ({ searchText, setSearchText, currency, setCurrency, navigate, setXarajatModal }) => (
   <div className="products_header" style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
     <Input
       autoFocus
       type="search"
-      placeholder="Tovarni nomi yoki shtrix kodi orqali topish"
+      placeholder="Tovarni nomi, shtrix kodi yoki kod (birinchi 3 belgi) orqali topish"
       value={searchText}
-      onChange={(e) => {
-        setSearchText(e.target.value);
-        if (codeSearchText) setCodeSearchText("");
-      }}
+      onChange={(e) => setSearchText(e.target.value)}
       style={{ flex: 1, minWidth: "200px" }}
-      disabled={codeSearchText.length > 0}
-    />
-    <Input
-      type="search"
-      placeholder="Kod orqali qidirish (birinchi 3 ta belgi)"
-      value={codeSearchText}
-      onChange={(e) => {
-        setCodeSearchText(e.target.value);
-        if (searchText) setSearchText("");
-      }}
-      style={{ flex: 1, minWidth: "200px" }}
-      disabled={searchText.length > 0}
     />
     <Select value={currency} onChange={(value) => setCurrency(value)} style={{ width: "100px" }}>
       <Option value="SUM">SUM</Option>
       <Option value="USD">USD</Option>
     </Select>
-    <Button
-      type="primary"
-      onClick={() => navigate("/debtors")}
-    >
+    <Button type="primary" onClick={() => navigate("/debtors")}>
       Qarzdorlar
     </Button>
-    <Button
-      type="primary"
-      onClick={() => setXarajatModal(true)}
-    >
+    <Button type="primary" onClick={() => setXarajatModal(true)}>
       Xarajat qo'shish
     </Button>
   </div>
@@ -90,7 +69,6 @@ const Kassa = () => {
   const [buyerType, setBuyerType] = useState(null);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchText, setSearchText] = useState("");
-  const [codeSearchText, setCodeSearchText] = useState("");
   const [basket, setBasket] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -134,23 +112,23 @@ const Kassa = () => {
 
   useEffect(() => {
     let result = allProducts;
-
-    const codeSearchLower = codeSearchText.toLowerCase();
     const searchLower = searchText.toLowerCase();
 
-    if (codeSearchLower) {
-      result = allProducts.filter((product) =>
-        (product.code || "").toLowerCase().startsWith(codeSearchLower)
-      );
-    } else if (searchLower) {
-      result = allProducts.filter((product) =>
-        (product.name || "").toLowerCase().includes(searchLower) ||
-        (product.barcode || "").toLowerCase().includes(searchLower)
-      );
+    if (searchLower) {
+      if (searchLower.length <= 3) {
+        result = allProducts.filter((product) =>
+          (product.code || "").toLowerCase().startsWith(searchLower)
+        );
+      } else {
+        result = allProducts.filter((product) =>
+          (product.name || "").toLowerCase().includes(searchLower) ||
+          (product.barcode || "").toLowerCase().includes(searchLower)
+        );
+      }
     }
 
     setFilteredProducts(result);
-  }, [allProducts, searchText, codeSearchText]);
+  }, [allProducts, searchText]);
 
   const handleCancel = () => {
     setXarajatModal(false);
@@ -738,8 +716,6 @@ const Kassa = () => {
         <ProductsHeader
           searchText={searchText}
           setSearchText={setSearchText}
-          codeSearchText={codeSearchText}
-          setCodeSearchText={setCodeSearchText}
           currency={currency}
           setCurrency={setCurrency}
           navigate={navigate}
@@ -759,8 +735,6 @@ const Kassa = () => {
           <ProductsHeader
             searchText={searchText}
             setSearchText={setSearchText}
-            codeSearchText={codeSearchText}
-            setCodeSearchText={setCodeSearchText}
             currency={currency}
             setCurrency={setCurrency}
             navigate={navigate}
