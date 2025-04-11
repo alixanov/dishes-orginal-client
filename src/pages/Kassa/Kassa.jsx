@@ -24,6 +24,50 @@ import zolotayaroza77 from "../../assets/zolotayaroza77.svg";
 
 const { Option } = Select;
 
+const ProductsHeader = ({ searchText, setSearchText, codeSearchText, setCodeSearchText, currency, setCurrency, navigate, setXarajatModal }) => (
+  <div className="products_header" style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+    <Input
+      autoFocus
+      type="search"
+      placeholder="Tovarni nomi yoki shtrix kodi orqali topish"
+      value={searchText}
+      onChange={(e) => {
+        setSearchText(e.target.value);
+        if (codeSearchText) setCodeSearchText("");
+      }}
+      style={{ flex: 1, minWidth: "200px" }}
+      disabled={codeSearchText.length > 0}
+    />
+    <Input
+      type="search"
+      placeholder="Kod orqali qidirish (birinchi 3 ta belgi)"
+      value={codeSearchText}
+      onChange={(e) => {
+        setCodeSearchText(e.target.value);
+        if (searchText) setSearchText("");
+      }}
+      style={{ flex: 1, minWidth: "200px" }}
+      disabled={searchText.length > 0}
+    />
+    <Select value={currency} onChange={(value) => setCurrency(value)} style={{ width: "100px" }}>
+      <Option value="SUM">SUM</Option>
+      <Option value="USD">USD</Option>
+    </Select>
+    <Button
+      type="primary"
+      onClick={() => navigate("/debtors")}
+    >
+      Qarzdorlar
+    </Button>
+    <Button
+      type="primary"
+      onClick={() => setXarajatModal(true)}
+    >
+      Xarajat qo'shish
+    </Button>
+  </div>
+);
+
 const Kassa = () => {
   const { data: products = [] } = useGetProductsQuery();
   const { data: partnerProducts = [] } = useGetProductsPartnerQuery();
@@ -42,8 +86,8 @@ const Kassa = () => {
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [xarajatModal, setXarajatModal] = useState(false);
   const navigate = useNavigate();
-  const [selectedBuyer, setSelectedBuyer] = useState(""); // Заменили selectedClient на selectedBuyer
-  const [buyerType, setBuyerType] = useState(null); // "client" или "partner"
+  const [selectedBuyer, setSelectedBuyer] = useState("");
+  const [buyerType, setBuyerType] = useState(null);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [codeSearchText, setCodeSearchText] = useState("");
@@ -56,7 +100,6 @@ const Kassa = () => {
   const [selectedUnit, setSelectedUnit] = useState("quantity");
   const userLogin = localStorage.getItem("user_login") || "Noma'lum foydalanuvchi";
 
-  // Объединяем продукты из Product и Partner
   const allProducts = [
     ...products.map((product) => ({
       ...product,
@@ -64,7 +107,7 @@ const Kassa = () => {
       name: product.name || "Noma'lum",
       barcode: product.barcode || "",
       code: product.code || "",
-      partnerName: product.name_partner || "Noma'lum", // Добавляем имя партнера
+      partnerName: product.name_partner || "Noma'lum",
     })),
     ...partnerProducts.map((product) => ({
       ...product,
@@ -72,11 +115,10 @@ const Kassa = () => {
       name: product.name || "Noma'lum",
       barcode: product.barcode || "",
       code: product.code || "",
-      partnerName: product.name_partner || "Noma'lum", // Добавляем имя партнера
+      partnerName: product.name_partner || "Noma'lum",
     })),
   ];
 
-  // Получаем уникальных партнеров
   const uniquePartners = Array.from(
     new Map(
       allProducts
@@ -91,22 +133,20 @@ const Kassa = () => {
   }, [expenses]);
 
   useEffect(() => {
-    let result = [];
+    let result = allProducts;
 
     const codeSearchLower = codeSearchText.toLowerCase();
     const searchLower = searchText.toLowerCase();
 
     if (codeSearchLower) {
-      result = allProducts.filter((product) => {
-        const code = (product.code || "").toLowerCase();
-        return code.startsWith(codeSearchLower);
-      });
+      result = allProducts.filter((product) =>
+        (product.code || "").toLowerCase().startsWith(codeSearchLower)
+      );
     } else if (searchLower) {
-      result = allProducts.filter((product) => {
-        const name = (product.name || "").toLowerCase();
-        const barcode = (product.barcode || "").toLowerCase();
-        return name.includes(searchLower) || barcode.includes(searchLower);
-      });
+      result = allProducts.filter((product) =>
+        (product.name || "").toLowerCase().includes(searchLower) ||
+        (product.barcode || "").toLowerCase().includes(searchLower)
+      );
     }
 
     setFilteredProducts(result);
@@ -131,18 +171,12 @@ const Kassa = () => {
 
   const convertPrice = (price, fromCurrency, toCurrency, rate) => {
     if (fromCurrency === toCurrency) return price;
-    if (fromCurrency === "USD" && toCurrency === "SUM") {
-      return price * rate;
-    }
-    if (fromCurrency === "SUM" && toCurrency === "USD") {
-      return price / rate;
-    }
+    if (fromCurrency === "USD" && toCurrency === "SUM") return price * rate;
+    if (fromCurrency === "SUM" && toCurrency === "USD") return price / rate;
     return price;
   };
 
-  const formatNumber = (num) => {
-    return Number(num).toString();
-  };
+  const formatNumber = (num) => Number(num).toString();
 
   const generatePDF = () => {
     const { totalUSD, totalSUM } = basket.reduce(
@@ -163,11 +197,8 @@ const Kassa = () => {
             : totalPrice - promo.percent
           : totalPrice;
 
-        if (item.currency === "USD") {
-          acc.totalUSD += discountedPrice;
-        } else {
-          acc.totalSUM += discountedPrice;
-        }
+        if (item.currency === "USD") acc.totalUSD += discountedPrice;
+        else acc.totalSUM += discountedPrice;
         return acc;
       },
       { totalUSD: 0, totalSUM: 0 }
@@ -184,7 +215,7 @@ const Kassa = () => {
     } else if (buyerType === "partner" && selectedBuyer) {
       const partner = uniquePartners.find((p) => p.id === selectedBuyer);
       buyerName = partner?.name || "Noma'lum";
-      buyerAddress = "Hamkor manzili yo'q"; // Можно добавить поле для адреса партнера, если оно есть
+      buyerAddress = "Hamkor manzili yo'q";
     } else {
       buyerName = formValues.clientName || "Noma'lum";
       buyerAddress = formValues.clientAddress || "Noma'lum";
@@ -218,9 +249,7 @@ const Kassa = () => {
             ? item.quantity
             : selectedUnit === "package_quantity"
               ? item.quantity * item.quantity_per_package
-              : selectedUnit === "box_quantity"
-                ? item.quantity * item.quantity_per_package * item.package_quantity_per_box
-                : null
+              : item.quantity * item.quantity_per_package * item.package_quantity_per_box
           }</td>
           <td style="padding: 8px;">${formatNumber(item.sellingPrice.value)}</td>
           <td style="padding: 8px;">${item.currency === "USD" ? "Доллар" : "Сум"}</td>
@@ -234,6 +263,16 @@ const Kassa = () => {
     const content = `
       <div style="width: 210mm; height: 297mm; padding: 20px; font-family: Arial, sans-serif; background-color: #f9f9f9; box-sizing: border-box;">
         <div style="border: 2px solid #1a73e8; border-radius: 12px; padding: 20px; background-color: #ffffff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+          <div style="display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #e0e0e0; padding-top: 20px;">
+            <div style="text-align: center;">
+              <img src="${yodgor_abdullaev}" style="width: 100px; height: 100px; border-radius: 10px; background: white; padding: 10px;" />
+              <p style="margin: 5px 0; font-size: 12px; color: #000;">@YODGOR_ABDULLAEV</p>
+            </div>
+            <div style="text-align: center;">
+              <img src="${zolotayaroza77}" style="width: 100px; height: 100px; border-radius: 10px; background: white; padding: 10px;" />
+              <p style="margin: 5px 0; font-size: 12px; color: #000;">@ZOLOTAYAROZA77</p>
+            </div>
+          </div>
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 20px;">
             <h2 style="margin: 0; font-size: 18px; color: #1a73e8;">${moment().format("DD.MM.YYYY, HH:mm:ss")} даги Хисобварак-фактура</h2>
             <span style="font-size: 16px; color: #555;">Хисобварак-фактура</span>
@@ -278,16 +317,6 @@ const Kassa = () => {
             <b style="color: #333;">Жами тўловнинг доллар билан тўланадиган қисми: ${formatNumber(totalUSD)} доллар</b><br/>
             <b style="color: #333;">Жами тўловнинг сyм билан тўланадиган қисми: ${formatNumber(totalSUM)} сyм</b>
           </div>
-          <div style="display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #e0e0e0; padding-top: 20px;">
-            <div style="text-align: center;">
-              <img src="${yodgor_abdullaev}" style="width: 100px; height: 100px; border-radius: 10px; background: white; padding: 10px;" />
-              <p style="margin: 5px 0; font-size: 12px; color: #000;">@YODGOR_ABDULLAEV</p>
-            </div>
-            <div style="text-align: center;">
-              <img src="${zolotayaroza77}" style="width: 100px; height: 100px; border-radius: 10px; background: white; padding: 10px;" />
-              <p style="margin: 5px 0; font-size: 12px; color: #000;">@ZOLOTAYAROZA77</p>
-            </div>
-          </div>
         </div>
       </div>
     `;
@@ -313,9 +342,7 @@ const Kassa = () => {
         document.body.removeChild(element);
         const pdfBlob = pdf.output("bloburl");
         const printWindow = window.open(pdfBlob);
-        printWindow.onload = () => {
-          printWindow.print();
-        };
+        printWindow.onload = () => printWindow.print();
       })
       .catch((error) => {
         console.error("Ошибка при генерации PDF:", error);
@@ -400,14 +427,11 @@ const Kassa = () => {
                 {
                   ...record,
                   quantity: 1,
-                  currency: currency,
-                  originalPrice: {
-                    value: price,
-                    currency: productCurrency,
-                  },
+                  currency,
+                  originalPrice: { value: price, currency: productCurrency },
                   sellingPrice: {
                     value: convertPrice(price, productCurrency, currency, usdRate?.rate),
-                    currency: currency,
+                    currency,
                   },
                 },
               ]);
@@ -463,25 +487,17 @@ const Kassa = () => {
       render: (_, record) => (
         <div
           className="table_actions"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-          }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
         >
           <Button
             onClick={() => {
-              const newBasket = basket.map((item) => {
-                if (item._id === record._id) {
-                  const newQuantity = item.quantity - 1;
-                  if (newQuantity === 0) {
-                    return null;
-                  }
-                  return { ...item, quantity: newQuantity };
-                }
-                return item;
-              }).filter((item) => item !== null);
+              const newBasket = basket.map((item) =>
+                item._id === record._id
+                  ? item.quantity > 1
+                    ? { ...item, quantity: item.quantity - 1 }
+                    : null
+                  : item
+              ).filter(Boolean);
               setBasket(newBasket);
             }}
           >
@@ -490,12 +506,9 @@ const Kassa = () => {
           <span style={{ width: "20px", textAlign: "center" }}>{record.quantity}</span>
           <Button
             onClick={() => {
-              const newBasket = basket.map((item) => {
-                if (item._id === record._id) {
-                  return { ...item, quantity: item.quantity + 1 };
-                }
-                return item;
-              });
+              const newBasket = basket.map((item) =>
+                item._id === record._id ? { ...item, quantity: item.quantity + 1 } : item
+              );
               setBasket(newBasket);
             }}
           >
@@ -510,26 +523,24 @@ const Kassa = () => {
         <Select
           value={record.currency}
           onChange={(value) => {
-            const newBasket = basket.map((item) => {
-              if (item._id === record._id) {
-                const convertedPrice = convertPrice(
-                  item.originalPrice.value,
-                  item.originalPrice.currency,
-                  value,
-                  usdRate?.rate
-                );
-                return {
+            const newBasket = basket.map((item) =>
+              item._id === record._id
+                ? {
                   ...item,
                   currency: value,
                   sellingPrice: {
                     ...item.sellingPrice,
-                    value: convertedPrice,
+                    value: convertPrice(
+                      item.originalPrice.value,
+                      item.originalPrice.currency,
+                      value,
+                      usdRate?.rate
+                    ),
                     currency: value,
                   },
-                };
-              }
-              return item;
-            });
+                }
+                : item
+            );
             setBasket(newBasket);
           }}
         >
@@ -547,22 +558,18 @@ const Kassa = () => {
             type="number"
             onChange={(e) => {
               const newPrice = parseFloat(e.target.value) || 0;
-              const newBasket = basket.map((item) => {
-                if (item._id === record._id) {
-                  return {
+              const newBasket = basket.map((item) =>
+                item._id === record._id
+                  ? {
                     ...item,
-                    sellingPrice: {
-                      ...item.sellingPrice,
-                      value: newPrice,
-                    },
+                    sellingPrice: { ...item.sellingPrice, value: newPrice },
                     originalPrice: {
                       value: convertPrice(newPrice, item.currency, item.originalPrice.currency, usdRate?.rate),
                       currency: item.originalPrice.currency,
                     },
-                  };
-                }
-                return item;
-              });
+                  }
+                  : item
+              );
               setBasket(newBasket);
             }}
             value={record?.sellingPrice?.value}
@@ -576,16 +583,15 @@ const Kassa = () => {
       render: (_, record) => (
         <Select
           style={{ width: "100px" }}
-          required
           onChange={(value) => setSelectedUnit(value)}
           value={selectedUnit}
           placeholder="Tanlang"
         >
-          <Select.Option value="quantity">Dona</Select.Option>
-          <Select.Option disabled={!record.isPackage} value="package_quantity">
+          <Option value="quantity">Dona</Option>
+          <Option disabled={!record.isPackage} value="package_quantity">
             Pachka
-          </Select.Option>
-          <Select.Option value="box_quantity">Karobka</Select.Option>
+          </Option>
+          <Option value="box_quantity">Karobka</Option>
         </Select>
       ),
     },
@@ -605,7 +611,6 @@ const Kassa = () => {
   const handleSell = async () => {
     try {
       await sellForm.validateFields();
-
       const formValues = sellForm.getFieldsValue();
 
       if (!paymentMethod || (paymentMethod === "credit" && !dueDate)) {
@@ -630,12 +635,12 @@ const Kassa = () => {
       }
 
       const promo = promos.find((p) => p._id === paymentDiscount);
-      const getDiscountedPrice = (price, quantity) => {
-        if (!promo) return price;
-        return promo.type === "percent"
-          ? price - (price * promo.percent) / 100
-          : (price * quantity - promo.percent) / quantity;
-      };
+      const getDiscountedPrice = (price, quantity) =>
+        promo
+          ? promo.type === "percent"
+            ? price - (price * promo.percent) / 100
+            : (price * quantity - promo.percent) / quantity
+          : price;
 
       if (paymentMethod === "credit") {
         await Promise.all(
@@ -649,9 +654,7 @@ const Kassa = () => {
                   ? item.quantity
                   : selectedUnit === "package_quantity"
                     ? item.quantity * item.quantity_per_package
-                    : selectedUnit === "box_quantity"
-                      ? item.quantity * item.quantity_per_package * item.package_quantity_per_box
-                      : null,
+                    : item.quantity * item.quantity_per_package * item.package_quantity_per_box,
               unit: selectedUnit,
               totalAmount:
                 getDiscountedPrice(
@@ -660,17 +663,13 @@ const Kassa = () => {
                     ? item.quantity
                     : selectedUnit === "package_quantity"
                       ? item.quantity * item.quantity_per_package
-                      : selectedUnit === "box_quantity"
-                        ? item.quantity * item.quantity_per_package * item.package_quantity_per_box
-                        : null
+                      : item.quantity * item.quantity_per_package * item.package_quantity_per_box
                 ) *
                 (selectedUnit === "quantity"
                   ? item.quantity
                   : selectedUnit === "package_quantity"
                     ? item.quantity * item.quantity_per_package
-                    : selectedUnit === "box_quantity"
-                      ? item.quantity * item.quantity_per_package * item.package_quantity_per_box
-                      : null),
+                    : item.quantity * item.quantity_per_package * item.package_quantity_per_box),
               currency: item.currency,
               sellingPrice: getDiscountedPrice(
                 item.sellingPrice.value,
@@ -678,9 +677,7 @@ const Kassa = () => {
                   ? item.quantity
                   : selectedUnit === "package_quantity"
                     ? item.quantity * item.quantity_per_package
-                    : selectedUnit === "box_quantity"
-                      ? item.quantity * item.quantity_per_package * item.package_quantity_per_box
-                      : null
+                    : item.quantity * item.quantity_per_package * item.package_quantity_per_box
               ),
               paymentMethod,
               warehouseId: item.warehouse?._id,
@@ -704,18 +701,14 @@ const Kassa = () => {
                   ? item.quantity
                   : selectedUnit === "package_quantity"
                     ? item.quantity * item.quantity_per_package
-                    : selectedUnit === "box_quantity"
-                      ? item.quantity * item.quantity_per_package * item.package_quantity_per_box
-                      : null,
+                    : item.quantity * item.quantity_per_package * item.package_quantity_per_box,
               sellingPrice: getDiscountedPrice(
                 item.sellingPrice.value,
                 selectedUnit === "quantity"
                   ? item.quantity
                   : selectedUnit === "package_quantity"
                     ? item.quantity * item.quantity_per_package
-                    : selectedUnit === "box_quantity"
-                      ? item.quantity * item.quantity_per_package * item.package_quantity_per_box
-                      : null
+                    : item.quantity * item.quantity_per_package * item.package_quantity_per_box
               ),
               warehouseId: item.warehouse?._id,
               paymentMethod,
@@ -725,7 +718,6 @@ const Kassa = () => {
       }
 
       generatePDF();
-
       setIsModalVisible(false);
       setBasket([]);
       setPaymentMethod("");
@@ -743,49 +735,16 @@ const Kassa = () => {
   return (
     <div className="page" style={{ marginTop: "8px", paddingInline: "4px" }}>
       <div className="products">
-        <div className="products_header" style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-          <Input
-            autoFocus
-            type="search"
-            placeholder="Tovarni nomi yoki shtrix kodi orqali topish"
-            value={searchText}
-            onChange={(e) => {
-              setSearchText(e.target.value);
-              if (codeSearchText) setCodeSearchText("");
-            }}
-            style={{ flex: 1, minWidth: "200px" }}
-            disabled={codeSearchText.length > 0}
-          />
-          <Input
-            type="search"
-            placeholder="Kod orqali qidirish (birinchi 3 ta belgi)"
-            value={codeSearchText}
-            onChange={(e) => {
-              setCodeSearchText(e.target.value);
-              if (searchText) setSearchText("");
-            }}
-            style={{ flex: 1, minWidth: "200px" }}
-            disabled={searchText.length > 0}
-          />
-          <Select value={currency} onChange={(value) => setCurrency(value)} style={{ width: "100px" }}>
-            <Option value="SUM">SUM</Option>
-            <Option value="USD">USD</Option>
-          </Select>
-          <Button
-            style={{ justifySelf: "end", display: "flex" }}
-            type="primary"
-            onClick={() => navigate("/debtors")}
-          >
-            Qarzdorlar
-          </Button>
-          <Button
-            style={{ justifySelf: "end", display: "flex" }}
-            type="primary"
-            onClick={() => setXarajatModal(true)}
-          >
-            Xarajat qo'shish
-          </Button>
-        </div>
+        <ProductsHeader
+          searchText={searchText}
+          setSearchText={setSearchText}
+          codeSearchText={codeSearchText}
+          setCodeSearchText={setCodeSearchText}
+          currency={currency}
+          setCurrency={setCurrency}
+          navigate={navigate}
+          setXarajatModal={setXarajatModal}
+        />
         <Table
           size="small"
           style={{ overflow: "auto", minWidth: "100%", maxHeight: "100%" }}
@@ -797,6 +756,16 @@ const Kassa = () => {
       </div>
       {basket.length > 0 && (
         <div className="basket">
+          <ProductsHeader
+            searchText={searchText}
+            setSearchText={setSearchText}
+            codeSearchText={codeSearchText}
+            setCodeSearchText={setCodeSearchText}
+            currency={currency}
+            setCurrency={setCurrency}
+            navigate={navigate}
+            setXarajatModal={setXarajatModal}
+          />
           <Table
             size="small"
             style={{ overflow: "auto", minWidth: "100%", maxHeight: "100%" }}
@@ -808,56 +777,60 @@ const Kassa = () => {
           <p>
             Umumiy to'lov SUM:{" "}
             {formatNumber(
-              basket
-                .reduce(
-                  (acc, item) => {
-                    const totalPrice =
-                      item.sellingPrice.value *
-                      (selectedUnit === "quantity"
-                        ? item.quantity
-                        : selectedUnit === "package_quantity"
-                          ? item.quantity * item.quantity_per_package
-                          : selectedUnit === "box_quantity"
-                            ? item.quantity * item.quantity_per_package * item.package_quantity_per_box
-                            : null);
-                    const promo = promos.find((p) => p._id === paymentDiscount);
-                    const discountedPrice = promo
-                      ? promo.type === "percent"
-                        ? totalPrice - (totalPrice / 100) * promo.percent
-                        : totalPrice - promo.percent
-                      : totalPrice;
-                    return acc + (item.currency === "SUM" ? discountedPrice : convertPrice(discountedPrice, "USD", "SUM", usdRate?.rate));
-                  },
-                  0
-                )
+              basket.reduce(
+                (acc, item) => {
+                  const totalPrice =
+                    item.sellingPrice.value *
+                    (selectedUnit === "quantity"
+                      ? item.quantity
+                      : selectedUnit === "package_quantity"
+                        ? item.quantity * item.quantity_per_package
+                        : item.quantity * item.quantity_per_package * item.package_quantity_per_box);
+                  const promo = promos.find((p) => p._id === paymentDiscount);
+                  const discountedPrice = promo
+                    ? promo.type === "percent"
+                      ? totalPrice - (totalPrice / 100) * promo.percent
+                      : totalPrice - promo.percent
+                    : totalPrice;
+                  return (
+                    acc +
+                    (item.currency === "SUM"
+                      ? discountedPrice
+                      : convertPrice(discountedPrice, "USD", "SUM", usdRate?.rate))
+                  );
+                },
+                0
+              )
             )}{" "}
             so'm
           </p>
           <p>
             Umumiy to'lov USD:{" "}
             {formatNumber(
-              basket
-                .reduce(
-                  (acc, item) => {
-                    const totalPrice =
-                      item.sellingPrice.value *
-                      (selectedUnit === "quantity"
-                        ? item.quantity
-                        : selectedUnit === "package_quantity"
-                          ? item.quantity * item.quantity_per_package
-                          : selectedUnit === "box_quantity"
-                            ? item.quantity * item.quantity_per_package * item.package_quantity_per_box
-                            : null);
-                    const promo = promos.find((p) => p._id === paymentDiscount);
-                    const discountedPrice = promo
-                      ? promo.type === "percent"
-                        ? totalPrice - (totalPrice / 100) * promo.percent
-                        : totalPrice - promo.percent
-                      : totalPrice;
-                    return acc + (item.currency === "USD" ? discountedPrice : convertPrice(discountedPrice, "SUM", "USD", usdRate?.rate));
-                  },
-                  0
-                )
+              basket.reduce(
+                (acc, item) => {
+                  const totalPrice =
+                    item.sellingPrice.value *
+                    (selectedUnit === "quantity"
+                      ? item.quantity
+                      : selectedUnit === "package_quantity"
+                        ? item.quantity * item.quantity_per_package
+                        : item.quantity * item.quantity_per_package * item.package_quantity_per_box);
+                  const promo = promos.find((p) => p._id === paymentDiscount);
+                  const discountedPrice = promo
+                    ? promo.type === "percent"
+                      ? totalPrice - (totalPrice / 100) * promo.percent
+                      : totalPrice - promo.percent
+                    : totalPrice;
+                  return (
+                    acc +
+                    (item.currency === "USD"
+                      ? discountedPrice
+                      : convertPrice(discountedPrice, "SUM", "USD", usdRate?.rate))
+                  );
+                },
+                0
+              )
             )}{" "}
             $
           </p>
@@ -934,25 +907,25 @@ const Kassa = () => {
           sellForm.resetFields();
         }}
       >
-        <Form
-          form={sellForm}
-          layout="vertical"
-          style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-        >
-          <Form.Item label="To'lov usuli" name="paymentMethod" rules={[{ required: true, message: "To'lov usulini tanlang" }]}>
+        <Form form={sellForm} layout="vertical" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <Form.Item
+            label="To'lov usuli"
+            name="paymentMethod"
+            rules={[{ required: true, message: "To'lov usulini tanlang" }]}
+          >
             <Select value={paymentMethod} onChange={(value) => setPaymentMethod(value)}>
-              <Select.Option value="cash">Naqd</Select.Option>
-              <Select.Option value="card">Plastik karta</Select.Option>
-              <Select.Option value="credit">Qarz</Select.Option>
+              <Option value="cash">Naqd</Option>
+              <Option value="card">Plastik karta</Option>
+              <Option value="credit">Qarz</Option>
             </Select>
           </Form.Item>
           <Form.Item label="Promokod" name="paymentDiscount">
             <Select value={paymentDiscount} onChange={(value) => setPaymentDiscount(value)}>
-              <Select.Option value={0}>Promokodsiz</Select.Option>
+              <Option value={0}>Promokodsiz</Option>
               {promos.map((item) => (
-                <Select.Option key={item._id} value={item._id}>
+                <Option key={item._id} value={item._id}>
                   {item.code}
-                </Select.Option>
+                </Option>
               ))}
             </Select>
           </Form.Item>
@@ -992,37 +965,26 @@ const Kassa = () => {
                 }
               }}
               placeholder="Haridor yoki Hamkorni tanlang"
-              optionFilterProp="label" // Используем label для фильтрации
+              optionFilterProp="label"
               filterOption={(input, option) =>
                 (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
               }
             >
-              <Select.Option value="" label="Yangi haridor">
+              <Option value="" label="Yangi haridor">
                 Yangi haridor
-              </Select.Option>
+              </Option>
               {clients.map((client) => (
-                <Select.Option
-                  key={client._id}
-                  value={client._id}
-                  type="client"
-                  label={client.name} // Явно задаём label для фильтрации
-                >
+                <Option key={client._id} value={client._id} type="client" label={client.name}>
                   {client.name} (Xaridor)
-                </Select.Option>
+                </Option>
               ))}
               {uniquePartners.map((partner) => (
-                <Select.Option
-                  key={partner.id}
-                  value={partner.id}
-                  type="partner"
-                  label={partner.name} // Явно задаём label для фильтрации
-                >
+                <Option key={partner.id} value={partner.id} type="partner" label={partner.name}>
                   {partner.name} (Hamkor)
-                </Select.Option>
+                </Option>
               ))}
             </Select>
           </Form.Item>
-
           {selectedBuyer === "" && (
             <>
               <Form.Item
