@@ -111,20 +111,23 @@ const Kassa = () => {
   }, [expenses]);
 
   useEffect(() => {
+    if (!searchText) {
+      setFilteredProducts([]); // Clear products when search is empty
+      return;
+    }
+
     let result = allProducts;
     const searchLower = searchText.toLowerCase();
 
-    if (searchLower) {
-      if (searchLower.length <= 3) {
-        result = allProducts.filter((product) =>
-          (product.code || "").toLowerCase().startsWith(searchLower)
-        );
-      } else {
-        result = allProducts.filter((product) =>
-          (product.name || "").toLowerCase().includes(searchLower) ||
-          (product.barcode || "").toLowerCase().includes(searchLower)
-        );
-      }
+    if (searchLower.length <= 3) {
+      result = allProducts.filter((product) =>
+        (product.code || "").toLowerCase().startsWith(searchLower)
+      );
+    } else {
+      result = allProducts.filter((product) =>
+        (product.name || "").toLowerCase().includes(searchLower) ||
+        (product.barcode || "").toLowerCase().includes(searchLower)
+      );
     }
 
     setFilteredProducts(result);
